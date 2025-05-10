@@ -4,22 +4,42 @@ const corsConfig = require('./src/configs/cors.config');
 const pgConfig = require('./src/configs/pg.config');
 require('dotenv').config();
 
+const userRoutes = require('./src/routes/user.route');
+const logRoutes = require('./src/routes/log.route');
+const telegramRoutes = require('./src/routes/telegram.route');
+const rewardRoutes = require('./src/routes/reward.route');
+
+const cronJobs = require('./src/crons/cron.jobs');
+
 pgConfig.connect();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 app.use(cors(corsConfig));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.status(200).send("Mood Tracker API. Welcome!");
+    res.status(200).send("MindFlow API");
 });
 
-app.use('/auth', authRoute);
-app.use('/moods', moodRoute);
+
+app.use('/api/users', userRoutes);
+app.use('/api/logs', logRoutes);
+app.use('/api/telegram', telegramRoutes);
+app.use('/api/rewards', rewardRoutes);
+app.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Endpoint not found'
+    });
+});
 
 app.listen(PORT, () => {
     console.log(`[v] Server running on port ${PORT}!`);
+    
+    cronJobs.resetLoginStatusJob();
+    cronJobs.sendRemindersJob();
+    
+    console.log('[v] Cron jobs scheduled');
 });

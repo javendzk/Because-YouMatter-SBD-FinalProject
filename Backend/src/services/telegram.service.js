@@ -1,11 +1,13 @@
 const axios = require('axios');
 require('dotenv').config();
 
+
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 if (!TELEGRAM_BOT_TOKEN) {
     console.log('[!] Telegram bot token not set!');
 }
+
 
 exports.sendTelegramMessage = async (chatId, message) => {
     try {

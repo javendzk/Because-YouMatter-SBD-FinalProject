@@ -9,6 +9,7 @@ exports.createTelegramLog = async ({ userId, messageContent }) => {
             RETURNING *`,
             [userId, messageContent]
         );
+        
         return result.rows[0];
     } catch (error) {
         console.error('Error in createTelegramLog repository:', error);
@@ -23,9 +24,11 @@ exports.getUserTelegramId = async (userId) => {
             'SELECT telegram_id FROM users WHERE user_id = $1 AND telegram_id IS NOT NULL',
             [userId]
         );
+
         if (result.rows.length === 0) {
             return null;
         }
+
         return result.rows[0].telegram_id;
     } catch (error) {
         console.error('Error in getUserTelegramId repository:', error);

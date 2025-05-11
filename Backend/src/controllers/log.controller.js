@@ -7,11 +7,9 @@ const baseResponse = require('../utils/baseResponse');
 exports.createDailyLog = async (req, res) => {
     try {
         const userId = req.user.user_id;
-        const { activity, day_description } = req.body;
+        const { day_description, mood } = req.body;
         
-        const mood = await llmService.analyzeMood(activity, day_description);
-        
-        const feedbackData = await llmService.generateFeedback(activity, day_description, mood);
+        const feedbackData = await llmService.generateFeedback(day_description, mood);
         
         const llmResponse = await llmRepository.createResponse({
             message: feedbackData.message,
@@ -20,7 +18,6 @@ exports.createDailyLog = async (req, res) => {
         
         const dailyLog = await logRepository.createDailyLog({
             userId,
-            activity,
             day_description,
             mood,
             responseId: llmResponse.response_id

@@ -9,6 +9,7 @@ exports.createResponse = async ({ message, response }) => {
             RETURNING *`,
             [message, response]
         );
+
         return result.rows[0];
     } catch (error) {
         console.error('Error in createResponse repository:', error);
@@ -23,9 +24,11 @@ exports.getResponseById = async (responseId) => {
             'SELECT * FROM llm_responses WHERE response_id = $1',
             [responseId]
         );
+
         if (result.rows.length === 0) {
             return null;
         }
+
         return result.rows[0];
     } catch (error) {
         console.error('Error in getResponseById repository:', error);
@@ -44,9 +47,11 @@ exports.getLatestResponseByUserId = async (userId) => {
             LIMIT 1`,
             [userId]
         );
+
         if (result.rows.length === 0) {
             return null;
         }
+        
         return result.rows[0];
     } catch (error) {
         console.error('Error in getLatestResponseByUserId repository:', error);

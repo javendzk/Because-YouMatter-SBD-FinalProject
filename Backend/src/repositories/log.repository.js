@@ -1,30 +1,37 @@
 const db = require('../configs/pg.config');
 
 
-exports.createDailyLog = async ({ userId, activity, day_description, mood, responseId }) => {
+exports.createDailyLog = async ({ userId, day_description, mood, responseId }) => {
     try {
-        const today = new Date().toISOString().split('T')[0];       
+        const today = new Date().toISOString().split('T')[0];   
+            
         const existingLog = await db.query(
             'SELECT * FROM daily_logs WHERE user_id = $1 AND date = $2',
             [userId, today]
-        );        if (existingLog.rows.length > 0) {
+        );       
+        
+        if (existingLog.rows.length > 0) {
             const result = await db.query(
                 `UPDATE daily_logs 
-                SET activity = $1, day_description = $2, mood = $3, response_id = $4
-                WHERE user_id = $5 AND date = $6
+                SET day_description = $1, mood = $2, response_id = $3
+                WHERE user_id = $4 AND date = $5
                 RETURNING *`,
-                [activity, day_description, mood, responseId, userId, today]
+                [day_description, mood, responseId, userId, today]
             );
-            return result.rows[0];        } else {
+            return result.rows[0];        
+        } 
+            
+        else {
             const result = await db.query(
                 `INSERT INTO daily_logs 
-                (user_id, date, activity, day_description, mood, response_id)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                (user_id, date, day_description, mood, response_id)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING *`,
-                [userId, today, activity, day_description, mood, responseId]
+                [userId, today, day_description, mood, responseId]
             );
             return result.rows[0];
         }
+
     } catch (error) {
         console.error('Error in createDailyLog repository:', error);
         throw error;

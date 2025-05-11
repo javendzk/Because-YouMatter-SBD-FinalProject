@@ -10,4 +10,5 @@ router.post('/register', validatorMiddleware.validateUserRegistration, userContr
 router.post('/login', validatorMiddleware.validateUserLogin, userController.login);
 router.get('/profile', authMiddleware.verifyToken, userController.getUserProfile);
 router.put('/profile', authMiddleware.verifyToken, upload.single('image'), userController.updateProfile);
+
 module.exports = router;

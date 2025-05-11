@@ -41,10 +41,15 @@ exports.validateUserLogin = (req, res, next) => {
 
 
 exports.validateDailyLog = (req, res, next) => {
-    const { activity, day_description } = req.body;
+    const { day_description, mood } = req.body;
     
-    if (!activity || !day_description) {
-        return baseResponse(res, false, 400, 'Activity and day description are required', null);
+    if (!day_description || !mood) {
+        return baseResponse(res, false, 400, 'Day description and mood are required', null);
+    }
+    
+    const validMoods = ['awesome', 'good', 'okay', 'bad', 'terrible'];
+    if (!validMoods.includes(mood.toLowerCase())) {
+        return baseResponse(res, false, 400, 'Mood must be one of: awesome, good, okay, bad, terrible', null);
     }
     
     next();

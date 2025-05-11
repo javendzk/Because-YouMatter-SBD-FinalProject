@@ -26,7 +26,6 @@ CREATE TABLE daily_logs (
     log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
     date DATE NOT NULL,
-    activity TEXT NOT NULL,
     day_description TEXT NOT NULL,
     mood mood_enum, 
     response_id UUID REFERENCES llm_responses(response_id) ON DELETE SET NULL,

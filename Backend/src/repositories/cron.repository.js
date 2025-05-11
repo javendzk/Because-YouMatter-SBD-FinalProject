@@ -6,6 +6,7 @@ exports.resetDailyLoginStatus = async () => {
         const result = await db.query(
             'UPDATE users SET logged_in_today = FALSE'
         );
+
         return result.rowCount;
     } catch (error) {
         console.error('Error in resetDailyLoginStatus repository:', error);
@@ -22,6 +23,7 @@ exports.getInactiveUsers = async () => {
             WHERE logged_in_today = FALSE 
             AND telegram_id IS NOT NULL`
         );
+        
         return result.rows;
     } catch (error) {
         console.error('Error in getInactiveUsers repository:', error);

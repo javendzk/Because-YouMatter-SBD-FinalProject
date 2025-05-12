@@ -1,37 +1,17 @@
 const db = require('../configs/pg.config');
 
 
-exports.createDailyLog = async ({ userId, day_description, mood, responseId }) => {
+exports.createDailyLog = async ({ userId, day_description, mood }) => {
     try {
-        const today = new Date().toISOString().split('T')[0];   
-            
-        const existingLog = await db.query(
-            'SELECT * FROM daily_logs WHERE user_id = $1 AND date = $2',
-            [userId, today]
-        );       
-        
-        if (existingLog.rows.length > 0) {
-            const result = await db.query(
-                `UPDATE daily_logs 
-                SET day_description = $1, mood = $2, response_id = $3
-                WHERE user_id = $4 AND date = $5
-                RETURNING *`,
-                [day_description, mood, responseId, userId, today]
-            );
-            return result.rows[0];        
-        } 
-            
-        else {
-            const result = await db.query(
-                `INSERT INTO daily_logs 
-                (user_id, date, day_description, mood, response_id)
-                VALUES ($1, $2, $3, $4, $5)
-                RETURNING *`,
-                [userId, today, day_description, mood, responseId]
-            );
-            return result.rows[0];
-        }
-
+        // Use Jakarta date for consistency
+        const result = await db.query(
+            `INSERT INTO daily_logs 
+            (user_id, date, day_description, mood)
+            VALUES ($1, (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta'), $2, $3)
+            RETURNING *`,
+            [userId, day_description, mood]
+        );
+        return result.rows[0];
     } catch (error) {
         console.error('Error in createDailyLog repository:', error);
         throw error;
@@ -39,14 +19,14 @@ exports.createDailyLog = async ({ userId, day_description, mood, responseId }) =
 };
 
 
-exports.updateDailyLogMood = async ({ logId, mood, responseId }) => {
+exports.updateDailyLogMood = async ({ logId, mood }) => {
     try {
         const result = await db.query(
             `UPDATE daily_logs
-            SET mood = $1, response_id = $2
-            WHERE log_id = $3
+            SET mood = $1
+            WHERE log_id = $2
             RETURNING *`,
-            [mood, responseId, logId]
+            [mood, logId]
         );
         if (result.rows.length === 0) {
             return null;
@@ -62,11 +42,10 @@ exports.updateDailyLogMood = async ({ logId, mood, responseId }) => {
 exports.getDailyLogsByUserId = async (userId) => {
     try {
         const result = await db.query(
-            `SELECT dl.*, lr.response, lr.message
+            `SELECT dl.*
             FROM daily_logs dl
-            LEFT JOIN llm_responses lr ON dl.response_id = lr.response_id
             WHERE dl.user_id = $1
-            ORDER BY dl.date DESC`,
+            ORDER BY dl.date DESC, dl.time DESC`,
             [userId]
         );
         return result.rows;
@@ -80,9 +59,8 @@ exports.getDailyLogsByUserId = async (userId) => {
 exports.getDailyLogById = async (logId) => {
     try {
         const result = await db.query(
-            `SELECT dl.*, lr.response, lr.message
+            `SELECT dl.*
             FROM daily_logs dl
-            LEFT JOIN llm_responses lr ON dl.response_id = lr.response_id
             WHERE dl.log_id = $1`,
             [logId]
         );

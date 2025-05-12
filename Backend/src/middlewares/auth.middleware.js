@@ -7,7 +7,7 @@ require('dotenv').config();
 exports.verifyToken = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        
+        // console.log(authHeader) buat debug
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return baseResponse(res, false, 401, 'Access token is missing or invalid', null);
         }

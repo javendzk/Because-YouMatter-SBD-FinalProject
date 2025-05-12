@@ -5,31 +5,31 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR NOT NULL,
     password VARCHAR NOT NULL,
-    email VARCHAR NOR NULL,
+    email VARCHAR NOT NULL,
     telegram_id BIGINT UNIQUE,
     occupation VARCHAR,
     gender gender_enum,
-    user_image_url TEXT,
+    user_image_url TEXT, 
     last_login TIMESTAMP,
     logged_in_today BOOLEAN DEFAULT FALSE,
     streak_counter INT DEFAULT 0
-);
-
-CREATE TABLE llm_responses (
-    response_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    message TEXT NOT NULL,
-    response TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE daily_logs (
     log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
     date DATE NOT NULL,
+    time TIME WITH TIME ZONE DEFAULT (CURRENT_TIME AT TIME ZONE 'Asia/Jakarta'),
     day_description TEXT NOT NULL,
-    mood mood_enum, 
-    response_id UUID REFERENCES llm_responses(response_id) ON DELETE SET NULL,
-    UNIQUE(user_id, date)
+    mood mood_enum
+);
+
+CREATE TABLE llm_responses (
+    response_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    log_id UUID REFERENCES daily_logs(log_id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    response TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE telegram_logs (

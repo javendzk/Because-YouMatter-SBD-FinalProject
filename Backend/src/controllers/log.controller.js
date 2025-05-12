@@ -9,26 +9,21 @@ exports.createDailyLog = async (req, res) => {
         const userId = req.user.user_id;
         const { day_description, mood } = req.body;
         
+        const dailyLog = await logRepository.createDailyLog({
+            userId,
+            day_description,
+            mood
+        });
+        
         const feedbackData = await llmService.generateFeedback(day_description, mood);
         
-        const llmResponse = await llmRepository.createResponse({
+        await llmRepository.createResponse({
+            logId: dailyLog.log_id,
             message: feedbackData.message,
             response: feedbackData.response
         });
         
-        const dailyLog = await logRepository.createDailyLog({
-            userId,
-            day_description,
-            mood,
-            responseId: llmResponse.response_id
-        });
-        
-        const result = {
-            ...dailyLog,
-            llmResponse: JSON.parse(llmResponse.response)
-        };
-        
-        return baseResponse(res, true, 201, 'Daily log created successfully', result);
+        return baseResponse(res, true, 201, 'Daily log created successfully', dailyLog);
     } catch (error) {
         console.error('Create daily log controller error:', error);
         return baseResponse(res, false, 500, 'Failed to create daily log', null);
@@ -42,23 +37,27 @@ exports.getUserLogs = async (req, res) => {
         
         const logs = await logRepository.getDailyLogsByUserId(userId);
         
-        const processedLogs = logs.map(log => {
-            let llmResponse = null;
+        const processedLogs = logs.map(async log => {
+            let llm_response = null;
             
-            if (log.response) {
-                try {
-                    llmResponse = JSON.parse(log.response);
-                } catch (e) {
-                    console.error('Error parsing LLM response:', e);
+            try {
+                const llmResponseData = await llmRepository.getResponseByLogId(log.log_id);
+                if (llmResponseData && llmResponseData.response) {
+                    llm_response = JSON.parse(llmResponseData.response);
                 }
+            } catch (err) {
+                console.error('Error parsing LLM response:', err);
             }
             
             return {
                 ...log,
-                llmResponse
-            };        });
+                llm_response
+            };
+        });
         
-        return baseResponse(res, true, 200, 'User logs retrieved successfully', processedLogs);
+        const resolvedLogs = await Promise.all(processedLogs);
+        
+        return baseResponse(res, true, 200, 'User logs retrieved successfully', resolvedLogs);
     } catch (error) {
         console.error('Get user logs controller error:', error);
         return baseResponse(res, false, 500, 'Failed to retrieve user logs', null);
@@ -81,18 +80,20 @@ exports.getLogById = async (req, res) => {
             return baseResponse(res, false, 403, 'Unauthorized access to log', null);
         }
         
-        let llmResponse = null;        
-        if (log.response) {
-            try {
-                llmResponse = JSON.parse(log.response);
-            } catch (e) {
-                console.error('Error parsing LLM response:', e);
+        let llm_response = null;
+        
+        try {
+            const llmResponseData = await llmRepository.getResponseByLogId(log.log_id);
+            if (llmResponseData && llmResponseData.response) {
+                llm_response = JSON.parse(llmResponseData.response);
             }
+        } catch (err) {
+            console.error('Error parsing LLM response:', err);
         }
         
         const result = {
             ...log,
-            llmResponse
+            llm_response
         };
         
         return baseResponse(res, true, 200, 'Log retrieved successfully', result);

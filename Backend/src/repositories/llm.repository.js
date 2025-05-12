@@ -1,13 +1,13 @@
 const db = require('../configs/pg.config');
 
 
-exports.createResponse = async ({ message, response }) => {
+exports.createResponse = async ({ logId, message, response }) => {
     try {
         const result = await db.query(
-            `INSERT INTO llm_responses (message, response)
-            VALUES ($1, $2)
+            `INSERT INTO llm_responses (log_id, message, response)
+            VALUES ($1, $2, $3)
             RETURNING *`,
-            [message, response]
+            [logId, message, response]
         );
 
         return result.rows[0];
@@ -36,12 +36,30 @@ exports.getResponseById = async (responseId) => {
     }
 };
 
+exports.getResponseByLogId = async (logId) => {
+    try {
+        const result = await db.query(
+            'SELECT * FROM llm_responses WHERE log_id = $1',
+            [logId]
+        );
+
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error in getResponseByLogId repository:', error);
+        throw error;
+    }
+};
+
 
 exports.getLatestResponseByUserId = async (userId) => {
     try {
         const result = await db.query(
             `SELECT lr.* FROM llm_responses lr
-            JOIN daily_logs dl ON lr.response_id = dl.response_id
+            JOIN daily_logs dl ON lr.log_id = dl.log_id
             WHERE dl.user_id = $1
             ORDER BY lr.created_at DESC
             LIMIT 1`,

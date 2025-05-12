@@ -84,11 +84,32 @@ exports.getUserById = async (userId) => {
 };
 
 
-exports.updateUserProfile = async (userId, { user_image_url, occupation, gender }) => {
+exports.updateUserProfile = async (userId, { username, email, user_image_url, occupation, gender, github_id }) => {
     try {
         const updateFields = [];
         const values = [];
         let paramCount = 1;
+        
+        if (username) {
+            updateFields.push(`username = $${paramCount++}`);
+            values.push(username);
+        }
+        
+        if (email) {
+            if (email) {
+                const emailCheck = await db.query(
+                    'SELECT * FROM users WHERE email = $1 AND user_id != $2',
+                    [email, userId]
+                );
+                
+                if (emailCheck.rows.length > 0) {
+                    throw new Error('Email already in use');
+                }
+            }
+            
+            updateFields.push(`email = $${paramCount++}`);
+            values.push(email);
+        }
         
         if (user_image_url) {
             updateFields.push(`user_image_url = $${paramCount++}`);
@@ -103,6 +124,11 @@ exports.updateUserProfile = async (userId, { user_image_url, occupation, gender 
         if (gender) {
             updateFields.push(`gender = $${paramCount++}`);
             values.push(gender);
+        }
+        
+        if (github_id) {
+            updateFields.push(`github_id = $${paramCount++}`);
+            values.push(github_id);
         }
 
         if (updateFields.length === 0) {

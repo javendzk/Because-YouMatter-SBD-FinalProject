@@ -105,13 +105,21 @@ exports.updateProfile = async (req, res) => {
             imageUrl = await uploadImageToCloudinary(req.file);
         }
         
-        const { occupation, gender } = req.body;
+        const { username, email, occupation, gender, github_id } = req.body;
         
-        const updatedUser = await userRepository.updateUserProfile(userId, {
-            user_image_url: imageUrl || req.body.user_image_url,
-            occupation,
-            gender
-        });
+        const updateData = {};
+        
+        if (username) updateData.username = username;
+        if (email) updateData.email = email;
+        if (occupation) updateData.occupation = occupation;
+        if (gender) updateData.gender = gender;
+        if (github_id) updateData.github_id = github_id;
+        
+        if (imageUrl || req.body.user_image_url) {
+            updateData.user_image_url = imageUrl || req.body.user_image_url;
+        }
+        
+        const updatedUser = await userRepository.updateUserProfile(userId, updateData);
         
         if (!updatedUser) {
             return baseResponse(res, false, 404, 'User not found or no changes provided', null);

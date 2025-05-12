@@ -23,8 +23,7 @@ exports.sendTelegramFeedback = async (req, res) => {
         if (log.user_id !== userId) {
             return baseResponse(res, false, 403, 'Unauthorized access to log', null);
         }
-        
-        const llmResponse = await llmRepository.getResponseById(log.response_id);
+          const llmResponse = await llmRepository.getResponseByLogId(log.log_id);
         if (!llmResponse) {
             return baseResponse(res, false, 404, 'LLM response not found', null);
         }

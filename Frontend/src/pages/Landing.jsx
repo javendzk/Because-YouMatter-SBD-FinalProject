@@ -1,4 +1,4 @@
-//Landing.jsx
+// Modified Landing component with fixed footer
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -189,7 +189,9 @@ const Landing = () => {
 
   const goToSlide = (index) => {
     setCurrentSlide(index);
-  };  const handleContinue = () => {
+  };  
+  
+  const handleContinue = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
@@ -200,17 +202,12 @@ const Landing = () => {
 
   const handleSkip = () => {
     // Navigate to fill page to input mood first when skipping the onboarding
-    navigate('/fill');
+    navigate('/signin');
   };
 
   const handleSignIn = () => {
     // Navigate to sign in page or open sign in modal
     navigate('/signin');
-  };
-  
-  const handleTryItNow = () => {
-    // Let users try the app quickly by going to the Fill page
-    navigate('/fill');
   };
 
   // Mood selection component with animation
@@ -329,7 +326,9 @@ const Landing = () => {
         🎉 Congratulations on your weekly streak!
       </motion.div>
     </motion.div>
-  );  // Emotions group component for final slide with animation
+  );  
+  
+  // Emotions group component for final slide with animation
   const EmotionsGroup = () => (
     <motion.div
       className="flex flex-col items-center justify-center w-full h-full overflow-hidden"
@@ -360,9 +359,11 @@ const Landing = () => {
       default:
         return <MoodSelector />;
     }
-  }; return (
+  }; 
+  
+  return (
     <motion.div
-      className="min-h-screen bg-blue-50 mobile-container no-scroll-bounce overflow-x-hidden"
+      className="min-h-screen bg-blue-50 mobile-container no-scroll-bounce overflow-x-hidden flex flex-col"
       initial="initial"
       animate="animate"
       exit="exit"
@@ -372,7 +373,7 @@ const Landing = () => {
       <Navbar userData={userData} />
 
       {/* Content Area */}
-      <main className="py-2 px-2 sm:py-4 sm:px-4 pt-20" ref={sliderRef}>
+      <main className="py-2 px-2 sm:py-4 sm:px-4 pt-20 flex-grow pb-24" ref={sliderRef}>
         {/* Device Frame */}
         <div className="max-w-4xl mx-auto">
           {/* Laptop Mockup Frame */}
@@ -447,25 +448,29 @@ const Landing = () => {
                 />
               ))}
             </motion.div>
+            
             {/* Action Buttons */}
-            <div className="flex justify-between items-center">              {currentSlide > 0 ? (
-              <motion.button
-                className="text-sm sm:text-base text-indigo-800 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-50 touch-target"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentSlide(currentSlide - 1)}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-                style={{ minHeight: 44 }}
-              >
-                Back
-              </motion.button>
-            ) : (
-              <div></div>
-            )}
+            <div className="flex justify-between items-center">
+              {/* Back button (only shown after first slide) */}
+              {currentSlide > 0 ? (
+                <motion.button
+                  className="text-sm sm:text-base text-indigo-800 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-50 touch-target"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentSlide(currentSlide - 1)}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ minHeight: 44 }}
+                >
+                  Back
+                </motion.button>
+              ) : (
+                <div></div> // Empty div to maintain layout
+              )}
 
               <div className="flex gap-2 sm:gap-3">
+                {/* Only show Skip button if not on final slide */}
                 {!slides[currentSlide].finalSlide && (
                   <motion.button
                     className="text-sm sm:text-base text-gray-500 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-gray-100 touch-target"
@@ -476,17 +481,9 @@ const Landing = () => {
                   >
                     Skip
                   </motion.button>
-                )}                {slides[currentSlide].finalSlide && (
-                  <motion.button
-                    className="text-sm sm:text-base bg-green-500 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-green-600 touch-target min-h-[44px]"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleTryItNow}
-                    style={{ minHeight: 44 }}
-                  >
-                    Try It Now
-                  </motion.button>
                 )}
+                
+                {/* Show either Continue or Sign In button based on slide */}
                 <motion.button
                   className="text-sm sm:text-base bg-indigo-900 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-800 touch-target min-h-[44px]"
                   whileHover={{ scale: 1.05 }}
@@ -501,7 +498,8 @@ const Landing = () => {
           </div>
         </div>
       </main>
-      <footer className="bg-indigo-900 text-white py-6 text-center text-sm">
+      {/* Fixed footer at the bottom */}
+      <footer className="bg-indigo-900 text-white py-6 text-center text-sm fixed bottom-0 left-0 w-full">
         <p>YouMatter — Taking care of your mental health</p>
         <p className="text-indigo-300">&copy; {new Date().getFullYear()} YouMatter. All rights reserved.</p>
       </footer>

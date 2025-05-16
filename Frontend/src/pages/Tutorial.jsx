@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from './Navbar'; // Import Navbar component
 
 // Import the same mood colors used in Fill.jsx for consistency
 const MOOD_COLORS = {
@@ -22,6 +23,13 @@ const Tutorial = () => {
   
   const textareaRef = useRef(null);
   const buttonRef = useRef(null);
+
+  // Dummy user data for Navbar
+  const userData = {
+    loggedIn: false,
+    username: '',
+    profilePicture: ''
+  };
 
   // Array of available moods
   const moods = ['awesome', 'good', 'okay', 'bad', 'terrible'];
@@ -166,32 +174,15 @@ const Tutorial = () => {
   };
 
   return (
-    <div className={`flex h-screen flex-col items-center justify-center bg-white transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Header with logo and sign in button */}
-      <div className="fixed top-0 flex w-full justify-between items-center bg-white p-4">
-        <div className="flex items-center">
-          <span className="text-blue-600 font-bold transform -rotate-12 text-xs mr-1">BETA</span>
-          <img 
-            src="/assets/styles/logo.png" 
-            alt="YouMatter Logo" 
-            className="h-6"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.style.display = 'none';
-              const textLogo = document.createElement('h1');
-              textLogo.innerText = 'YouMatter';
-              textLogo.className = 'text-blue-600 font-bold';
-              e.target.parentNode.appendChild(textLogo);
-            }}
-          />
-        </div>
-      </div>
+    <div className={`flex h-screen flex-col bg-white transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+      {/* Use the imported Navbar component */}
+      <Navbar userData={userData} />
       
       {/* Tutorial overlay */}
       <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-20 pointer-events-none" />
       
       {/* Main content - similar layout to Fill.jsx */}
-      <div className="w-full max-w-lg px-4 flex flex-col items-center z-30">
+      <div className="w-full max-w-lg px-4 mx-auto flex flex-col items-center z-30 mt-20">
         {/* Tutorial guidance box */}
         <div className="bg-white rounded-lg p-4 mb-6 w-full shadow-lg border-l-4 border-indigo-500 transform transition-all duration-500">
           <h2 className="text-indigo-600 text-xl font-bold mb-2">

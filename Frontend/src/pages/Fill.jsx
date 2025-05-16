@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
 
 // Mood colors matching design system
 const MOOD_COLORS = {
@@ -16,7 +17,13 @@ const Fill = () => {
   const [moodDescription, setMoodDescription] = useState('');
   const [animating, setAnimating] = useState(false);
 
-  // Array of available moods in the order they appear in the UI
+  // Dummy user data for Navbar
+  const userData = {
+    loggedIn: false,
+    username: '',
+    profilePicture: ''
+  };
+
   const moods = ['awesome', 'good', 'okay', 'bad', 'terrible'];
 
   const handleMoodChange = (mood) => {
@@ -32,7 +39,6 @@ const Fill = () => {
   };
 
   const handleSubmitMood = () => {
-    // Navigate to the welcoming page with the selected mood and description
     navigate('/welcoming', { 
       state: { 
         mood: selectedMood,
@@ -42,43 +48,20 @@ const Fill = () => {
   };
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center bg-white">
-      {/* Header with logo and sign in button */}
-      <div className="fixed top-0 flex w-full justify-between items-center bg-white p-4">
-        <div className="flex items-center">
-          <span className="text-blue-600 font-bold transform -rotate-12 text-xs mr-1">BETA</span>
-          <img 
-            src="/assets/styles/logo.png" 
-            alt="YouMatter Logo" 
-            className="h-6"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.style.display = 'none';
-              const textLogo = document.createElement('h1');
-              textLogo.innerText = 'YouMatter';
-              textLogo.className = 'text-blue-600 font-bold';
-              e.target.parentNode.appendChild(textLogo);
-            }}
-          />
-        </div>
-        <button className="px-4 py-1 rounded-full border border-gray-300 text-gray-700 text-sm">
-          Sign In
-        </button>
-      </div>
-      
-      {/* Main content - centered and maximized */}
-      <div className="w-full max-w-lg px-4 flex flex-col items-center">
-        {/* Mood selection area */}
+    <div className="flex h-screen flex-col bg-white">
+      {/* Use the imported Navbar component */}
+      <Navbar userData={userData} />
+
+      <div className="w-full max-w-lg px-4 mx-auto flex flex-col items-center mt-20">
         <div className="bg-blue-50 rounded-lg p-8 mb-6 w-full flex flex-col items-center">
           <h2 className="text-gray-700 text-2xl mb-2 font-medium text-center">
             How are you feeling today?
           </h2>
-          
+
           <p className="text-gray-600 mb-6 text-center">
             {selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)}
           </p>
-          
-          {/* Mood emoji display with animation */}
+
           <div 
             className={`mb-8 transform transition-all duration-500 ease-in-out ${animating ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
             style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -93,8 +76,7 @@ const Fill = () => {
               }}
             />
           </div>
-          
-          {/* Mood selector dots */}
+
           <div className="flex justify-center gap-4 mb-2">
             {moods.map(mood => (
               <button
@@ -111,8 +93,7 @@ const Fill = () => {
             ))}
           </div>
         </div>
-        
-        {/* Input area */}
+
         <div className="w-full mb-6">
           <p className="text-gray-700 mb-2">Tell us a little bit about your mood!</p>
           <textarea
@@ -123,8 +104,7 @@ const Fill = () => {
             onChange={(e) => setMoodDescription(e.target.value)}
           />
         </div>
-        
-        {/* Submit button */}
+
         <button
           onClick={handleSubmitMood}
           className="w-full bg-black text-white rounded-full py-4 font-medium text-lg transition-all duration-300 hover:bg-gray-800 active:bg-gray-900"

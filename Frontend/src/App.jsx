@@ -7,6 +7,7 @@ import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import Welcoming from './pages/Welcoming';
 import Fill from './pages/Fill';
+import Tutorial from './pages/Tutorial';
 
 function App() {
   return (    <Router>      <Routes>
@@ -15,6 +16,7 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/fill" element={<Fill />} />
+        <Route path="/tutorial" element={<Tutorial />} />
         <Route path="/welcoming" element={<Welcoming />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

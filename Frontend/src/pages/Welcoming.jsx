@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import Lottie from 'lottie-react';
 import '../assets/styles/welcomingAnimation.css';
 import '../assets/styles/flameAnimation.css';
 
@@ -83,6 +82,24 @@ const Welcoming = () => {
                     Welcome to YouMatter
                 </h1>
 
+                {/* Add corresponding mood image right after welcome text */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="my-4"
+                >
+                    <img
+                        src={`/src/assets/emotions/${mood.charAt(0).toUpperCase() + mood.slice(1)}.png`}
+                        alt={`${mood} mood`}
+                        className="w-24 h-24 mx-auto"
+                        onError={(e) => {
+                            // Fallback if image doesn't exist
+                            e.target.style.display = 'none';
+                        }}
+                    />
+                </motion.div>
+
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -110,47 +127,32 @@ const Welcoming = () => {
 
                 <p className="mt-2 text-gray-500 text-sm">Preparing your dashboard... {loadingProgress}%</p>
 
-                {/* Mood-specific animation */}
+                {/* Mood-specific animation and main logo container */}
                 <div className="mt-8 mb-6">
-                    <motion.div
-                        className="w-56 h-56 mx-auto p-5 rounded-full bg-white shadow-lg flex items-center justify-center pulse-glow"
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
-                        transition={{
-                            duration: 0.5,
-                            type: "spring",
-                            stiffness: 100
-                        }}
-                    >
-                        <div className="relative w-full h-full">
-                            {/* Main logo */}
-                            <img
-                                src="/src/assets/logo.png"
-                                alt="YouMatter Logo"
-                                className="w-32 h-32 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 float-animation"
-                            />
-
-                            {/* Add corresponding mood image if exists */}
-                            <motion.img
-                                src={`/src/assets/emotions/${mood.charAt(0).toUpperCase() + mood.slice(1)}.png`}
-                                alt={`${mood} mood`}
-                                className="w-16 h-16 absolute -bottom-2 -right-2"
-                                initial={{ opacity: 0, scale: 0 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 1, duration: 0.5 }}
-                                onError={(e) => {
-                                    // Fallback if image doesn't exist
-                                    e.target.style.display = 'none';
-                                }}
-                            />
-                        </div>
-                    </motion.div>
-
-                    <div className="mt-6 flex justify-center space-x-2">
-                        <span className="loading-dot dot-1"></span>
-                        <span className="loading-dot dot-2"></span>
-                        <span className="loading-dot dot-3"></span>
+                    <div className="relative w-56 h-56 mx-auto p-5 rounded-full bg-white shadow-lg flex items-center justify-center pulse-glow">
+                        <motion.div
+                            initial={{ scale: 0.8 }}
+                            animate={{ scale: 1 }}
+                            transition={{
+                                duration: 0.5,
+                                type: "spring",
+                                stiffness: 100
+                            }}
+                            className="absolute inset-0"
+                        />
+                        {/* Main logo - centered */}
+                        <img
+                            src="/src/assets/logo.png"
+                            alt="YouMatter Logo"
+                            className="w-32 h-32 float-animation"
+                        />
                     </div>
+                </div>
+
+                <div className="mt-6 flex justify-center space-x-2">
+                    <span className="loading-dot dot-1"></span>
+                    <span className="loading-dot dot-2"></span>
+                    <span className="loading-dot dot-3"></span>
                 </div>
             </motion.div>
         </div>

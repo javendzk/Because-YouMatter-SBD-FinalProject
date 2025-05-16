@@ -1,9 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-
-// This is a placeholder for the Fill page that will be implemented by your friend
-// It will collect information about how the user feels that day and then redirect to the Welcoming page
 
 // Mood colors matching design system
 const MOOD_COLORS = {
@@ -16,83 +12,125 @@ const MOOD_COLORS = {
 
 const Fill = () => {
   const navigate = useNavigate();
-  const [selectedMood, setSelectedMood] = useState('');
+  const [selectedMood, setSelectedMood] = useState('awesome');
+  const [moodDescription, setMoodDescription] = useState('');
+  const [animating, setAnimating] = useState(false);
 
-  const handleSubmitMood = (e) => {
-    e.preventDefault();
-    // Navigate to the welcoming page with the selected mood
+  // Array of available moods in the order they appear in the UI
+  const moods = ['awesome', 'good', 'okay', 'bad', 'terrible'];
+
+  const handleMoodChange = (mood) => {
+    if (mood !== selectedMood) {
+      setAnimating(true);
+      setTimeout(() => {
+        setSelectedMood(mood);
+        setTimeout(() => {
+          setAnimating(false);
+        }, 300);
+      }, 150);
+    }
+  };
+
+  const handleSubmitMood = () => {
+    // Navigate to the welcoming page with the selected mood and description
     navigate('/welcoming', { 
-      state: { mood: selectedMood || 'good' } 
+      state: { 
+        mood: selectedMood,
+        description: moodDescription 
+      } 
     });
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-indigo-100 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-        <h1 className="mb-6 text-center text-2xl font-bold text-indigo-700">
-          How are you feeling today?
-        </h1>
-        
-        <p className="mb-6 text-center text-gray-600">
-          Select your mood so we can personalize your experience.
-        </p>
-        
-        {/* Display selected mood image if one is selected */}
-        {selectedMood && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 flex flex-col items-center"
+    <div className="flex h-screen flex-col items-center justify-center bg-white">
+      {/* Header with logo and sign in button */}
+      <div className="fixed top-0 flex w-full justify-between items-center bg-white p-4">
+        <div className="flex items-center">
+          <span className="text-blue-600 font-bold transform -rotate-12 text-xs mr-1">BETA</span>
+          <img 
+            src="/assets/styles/logo.png" 
+            alt="YouMatter Logo" 
+            className="h-6"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.style.display = 'none';
+              const textLogo = document.createElement('h1');
+              textLogo.innerText = 'YouMatter';
+              textLogo.className = 'text-blue-600 font-bold';
+              e.target.parentNode.appendChild(textLogo);
+            }}
+          />
+        </div>
+        <button className="px-4 py-1 rounded-full border border-gray-300 text-gray-700 text-sm">
+          Sign In
+        </button>
+      </div>
+      
+      {/* Main content - centered and maximized */}
+      <div className="w-full max-w-lg px-4 flex flex-col items-center">
+        {/* Mood selection area */}
+        <div className="bg-blue-50 rounded-lg p-8 mb-6 w-full flex flex-col items-center">
+          <h2 className="text-gray-700 text-2xl mb-2 font-medium text-center">
+            How are you feeling today?
+          </h2>
+          
+          <p className="text-gray-600 mb-6 text-center">
+            {selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)}
+          </p>
+          
+          {/* Mood emoji display with animation */}
+          <div 
+            className={`mb-8 transform transition-all duration-500 ease-in-out ${animating ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+            style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <div 
-              className="w-24 h-24 rounded-full flex items-center justify-center mb-3"
-              style={{ backgroundColor: `${MOOD_COLORS[selectedMood]}30` }}
-            >
-              <img 
-                src={`/src/assets/emotions/${selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)}.png`}
-                alt={selectedMood}
-                className="w-16 h-16"
-                onError={(e) => {
-                  // Fallback if image doesn't exist
-                  e.target.style.display = 'none';
-                }}
-              />
-            </div>
-            <p className="text-lg font-medium capitalize" style={{ color: MOOD_COLORS[selectedMood] }}>
-              {selectedMood}
-            </p>
-          </motion.div>
-        )}
-        
-        {/* Mood selection form */}
-        <form onSubmit={handleSubmitMood}>
-          <div className="mb-6">
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Select your mood:
-            </label>
-            <select 
-              className="w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              value={selectedMood}
-              onChange={(e) => setSelectedMood(e.target.value)}
-              required
-            >
-              <option value="" disabled>Choose your mood...</option>
-              <option value="awesome">Awesome</option>
-              <option value="good">Good</option>
-              <option value="okay">Okay</option>
-              <option value="bad">Bad</option>
-              <option value="terrible">Terrible</option>
-            </select>
+            <img 
+              src={`/src/assets/emotions/${selectedMood}.png`}
+              alt={selectedMood}
+              className="w-32 h-32 object-contain"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = `/assets/emotions/${selectedMood}.png`;
+              }}
+            />
           </div>
           
-          <button
-            type="submit"
-            className="w-full rounded-md bg-indigo-600 px-4 py-3 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            disabled={!selectedMood}
-          >
-            Submit
-          </button>
-        </form>
+          {/* Mood selector dots */}
+          <div className="flex justify-center gap-4 mb-2">
+            {moods.map(mood => (
+              <button
+                key={mood}
+                className={`w-6 h-6 rounded-full transition-all duration-300 hover:scale-110 ${selectedMood === mood ? 'scale-125' : ''}`}
+                style={{ 
+                  backgroundColor: MOOD_COLORS[mood],
+                  transform: selectedMood === mood ? 'scale(1.25)' : 'scale(1)',
+                  boxShadow: selectedMood === mood ? '0 0 0 2px white' : 'none'
+                }}
+                onClick={() => handleMoodChange(mood)}
+                aria-label={`Select ${mood} mood`}
+              />
+            ))}
+          </div>
+        </div>
+        
+        {/* Input area */}
+        <div className="w-full mb-6">
+          <p className="text-gray-700 mb-2">Tell us a little bit about your mood!</p>
+          <textarea
+            className="w-full p-4 border border-gray-200 rounded-lg resize-none"
+            rows="5"
+            placeholder="..."
+            value={moodDescription}
+            onChange={(e) => setMoodDescription(e.target.value)}
+          />
+        </div>
+        
+        {/* Submit button */}
+        <button
+          onClick={handleSubmitMood}
+          className="w-full bg-black text-white rounded-full py-4 font-medium text-lg transition-all duration-300 hover:bg-gray-800 active:bg-gray-900"
+        >
+          Select mood
+        </button>
       </div>
     </div>
   );

@@ -1,0 +1,74 @@
+/* Welcoming Animation Styles */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.float-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(99, 102, 241, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), 0 0 30px rgba(79, 70, 229, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 0 5px rgba(99, 102, 241, 0.4);
+    }
+}
+
+.pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.loading-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #6366f1;
+    display: inline-block;
+    margin: 0 3px;
+}
+
+.dot-1 {
+    animation: dot-pulse 1.5s infinite 0s;
+}
+
+.dot-2 {
+    animation: dot-pulse 1.5s infinite 0.2s;
+}
+
+.dot-3 {
+    animation: dot-pulse 1.5s infinite 0.4s;
+}
+
+@keyframes dot-pulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+}

@@ -1,0 +1,172 @@
+import { useState } from 'react';
+import { Calendar, Filter, Edit, ChevronDown, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Import the same mood colors from Dashboard
+const MOOD_COLORS = {
+    AWESOME: "#FDDD6F", // Yellow
+    GOOD: "#46CD87",    // Green
+    OKAY: "#FF8AA6",    // Pink
+    BAD: "#FF7D35",     // Orange
+    TERRIBLE: "#9FC0FF"  // Light Blue
+};
+
+export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen }) {
+    const [expandedIndex, setExpandedIndex] = useState(null);
+
+    // Group moods by month
+    const groupByMonth = () => {
+        const months = Array.from(new Set(moodHistoryData.map(mood => mood.month)));
+        return months.map(month => ({
+            month,
+            moods: moodHistoryData.filter(mood => mood.month === month)
+        }));
+    };
+
+    const groupedMoods = groupByMonth();
+
+    return (
+        <div className="bg-white rounded-3xl shadow-md p-6">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-5">
+                <div>
+                    <h3 className="text-xl font-bold text-indigo-800">Mood History</h3>
+                    <p className="text-sm text-gray-500 mt-1">Track your journeys</p>
+                </div>
+                <div className="flex gap-3">          <button
+                    onClick={onCalendarOpen}
+                    className="flex items-center text-sm text-indigo-600 border border-blue-100 px-4 py-1.5 rounded-full"
+                >
+                    <Calendar size={16} className="mr-1.5" /> Calendar
+                </button>
+                    <button
+                        className="flex items-center text-sm text-indigo-600 bg-blue-50 px-4 py-1.5 rounded-full"
+                    >
+                        <Filter size={16} className="mr-1.5" /> Filter
+                    </button>
+                </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="relative px-2 py-6 mt-4">
+                {/* Timeline line */}
+                <div className="absolute left-16 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 via-blue-100 to-blue-200"></div>
+
+                {groupedMoods.map((group, groupIndex) => (
+                    <div key={group.month}>
+                        {/* Month divider (except for first month) */}
+                        {groupIndex > 0 && (
+                            <div className="text-center py-6 my-8 relative">
+                                <div className="flex items-center justify-center">
+                                    <div className="h-px bg-blue-100 w-20"></div>
+                                    <div className="text-indigo-600 font-semibold text-center text-lg px-4">
+                                        {group.month} 2025
+                                    </div>
+                                    <div className="h-px bg-blue-100 w-20"></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Moods for this month */}
+                        {group.moods.map((mood, index) => (
+                            <div key={`${mood.month}-${mood.day}`} className="flex items-start mb-16 relative">
+                                {/* Date indicator with blurry circle backdrop */}
+                                <div className="flex flex-col items-center w-14 mr-4 relative z-10">
+                                    <div className="absolute w-16 h-16 rounded-full bg-white shadow-sm filter blur-[6px] opacity-90"></div>
+                                    <div className="text-4xl font-bold leading-none relative" style={{ color: mood.textColor || mood.color }}>{mood.day}</div>
+                                    <div className="text-sm font-medium mt-0.5 relative" style={{ color: `${mood.textColor || mood.color}99` }}>{mood.weekday}</div>
+                                </div>
+
+                                {/* Mood emoji circle */}                                <div className="relative mr-4 z-10">
+                                    <div
+                                        className="w-16 h-16 rounded-full flex items-center justify-center shadow-sm overflow-hidden"
+                                        style={{ backgroundColor: mood.color }}
+                                    >
+                                        <img
+                                            src={mood.imageSrc}
+                                            alt={mood.mood}
+                                            className="w-11 h-11 object-contain"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Mood card */}                                <motion.div
+                                    className="flex-1 rounded-3xl p-5 relative ml-1 shadow-sm"
+                                    style={{ backgroundColor: `${mood.color}30` }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <h4 className="font-semibold text-base text-indigo-900">{mood.mood}</h4>
+                                            <p className="text-sm text-gray-600 mt-0.5">"{mood.description}"</p>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <button
+                                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-indigo-600 transition-colors"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+                                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-indigo-600 transition-colors"
+                                            >
+                                                <ChevronDown
+                                                    size={16}
+                                                    className={`${expandedIndex === index ? 'rotate-180' : ''} transition-transform duration-300`}
+                                                />
+                                            </button>
+                                            <button
+                                                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-indigo-600 transition-colors"
+                                            >
+                                                <ExternalLink size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Expanded view */}
+                                    {expandedIndex === index && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: "auto" }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="mt-4 text-sm overflow-hidden"
+                                        >
+                                            <div className="bg-white bg-opacity-70 p-4 rounded-2xl">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="h-1 w-1 rounded-full bg-indigo-400"></div>
+                                                    <span className="text-indigo-800 font-medium">Tags</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2 mb-4">
+                                                    {mood.tags.map((tag, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className="px-3 py-1 bg-white rounded-full text-xs text-indigo-600 font-medium shadow-sm"
+                                                        >
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="h-1 w-1 rounded-full bg-indigo-400"></div>
+                                                    <span className="text-indigo-800 font-medium">AI Insight</span>
+                                                </div>
+                                                <p className="text-gray-600">
+                                                    Your mood today was influenced by <strong>{mood.tags[0]}</strong>.
+                                                    Consider how this factor affects your emotional well-being and how you
+                                                    might cultivate more positive experiences.
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </motion.div>
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

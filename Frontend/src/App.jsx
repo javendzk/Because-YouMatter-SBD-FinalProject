@@ -8,19 +8,31 @@ import SignUp from './pages/SignUp';
 import Welcoming from './pages/Welcoming';
 import Fill from './pages/Fill';
 import Tutorial from './pages/Tutorial';
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
-  return (    <Router>      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/fill" element={<Fill />} />
-        <Route path="/tutorial" element={<Tutorial />} />
-        <Route path="/welcoming" element={<Welcoming />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+          <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
+          <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
+          
+          {/* Protected routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/fill" element={<ProtectedRoute><Fill /></ProtectedRoute>} />
+          <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
+          <Route path="/welcoming" element={<ProtectedRoute><Welcoming /></ProtectedRoute>} />
+          
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

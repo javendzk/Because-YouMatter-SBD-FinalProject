@@ -1,13 +1,13 @@
 const db = require('../configs/pg.config');
 
 
-exports.createResponse = async ({ logId, message, response }) => {
+exports.createResponse = async ({ logId, message, response, tags, insight }) => {
     try {
         const result = await db.query(
-            `INSERT INTO llm_responses (log_id, message, response)
-            VALUES ($1, $2, $3)
+            `INSERT INTO llm_responses (log_id, message, response, tags, insight)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *`,
-            [logId, message, response]
+            [logId, message, response, tags, insight]
         );
 
         return result.rows[0];

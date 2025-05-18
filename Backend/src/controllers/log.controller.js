@@ -20,7 +20,9 @@ exports.createDailyLog = async (req, res) => {
         await llmRepository.createResponse({
             logId: dailyLog.log_id,
             message: feedbackData.message,
-            response: feedbackData.response
+            response: feedbackData.response,
+            tags: feedbackData.tags,
+            insight: feedbackData.insight
         });
         
         return baseResponse(res, true, 201, 'Daily log created successfully', dailyLog);
@@ -39,11 +41,18 @@ exports.getUserLogs = async (req, res) => {
         
         const processedLogs = logs.map(async log => {
             let llm_response = null;
+            let tags = [];
+            let insight = null;
             
             try {
                 const llmResponseData = await llmRepository.getResponseByLogId(log.log_id);
-                if (llmResponseData && llmResponseData.response) {
-                    llm_response = JSON.parse(llmResponseData.response);
+                if (llmResponseData) {
+                    if (llmResponseData.response) {
+                        llm_response = JSON.parse(llmResponseData.response);
+                    }
+                    
+                    tags = llmResponseData.tags || [];
+                    insight = llmResponseData.insight || null;
                 }
             } catch (err) {
                 console.error('Error parsing LLM response:', err);
@@ -51,7 +60,9 @@ exports.getUserLogs = async (req, res) => {
             
             return {
                 ...log,
-                llm_response
+                llm_response,
+                tags,
+                insight
             };
         });
         
@@ -81,11 +92,18 @@ exports.getLogById = async (req, res) => {
         }
         
         let llm_response = null;
+        let tags = [];
+        let insight = null;
         
         try {
             const llmResponseData = await llmRepository.getResponseByLogId(log.log_id);
-            if (llmResponseData && llmResponseData.response) {
-                llm_response = JSON.parse(llmResponseData.response);
+            if (llmResponseData) {
+                if (llmResponseData.response) {
+                    llm_response = JSON.parse(llmResponseData.response);
+                }
+                
+                tags = llmResponseData.tags || [];
+                insight = llmResponseData.insight || null;
             }
         } catch (err) {
             console.error('Error parsing LLM response:', err);
@@ -93,7 +111,9 @@ exports.getLogById = async (req, res) => {
         
         const result = {
             ...log,
-            llm_response
+            llm_response,
+            tags,
+            insight
         };
         
         return baseResponse(res, true, 200, 'Log retrieved successfully', result);

@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const cronService = require('../services/cron.service');
+const birthdayService = require('../services/birthday.service');
 
 
 const resetLoginStatusJob = () => {
@@ -26,7 +27,20 @@ const sendRemindersJob = () => {
 };
 
 
+const checkBirthdaysJob = () => {
+    cron.schedule('0 9 * * *', async () => {
+        console.log('Running birthday check job at 9:00 AM Jakarta time');
+        const result = await birthdayService.checkAndSendBirthdayGreetings();
+        console.log('Birthday check result:', result);
+    }, {
+        scheduled: true,
+        timezone: "Asia/Jakarta"
+    });
+};
+
+
 module.exports = {
     resetLoginStatusJob,
-    sendRemindersJob
+    sendRemindersJob,
+    checkBirthdaysJob
 };

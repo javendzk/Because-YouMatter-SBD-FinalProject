@@ -25,28 +25,30 @@ const uploadImageToCloudinary = async (file) => {
 
 exports.register = async (req, res) => {
     try {
-        const { username, password, email, telegram_id, occupation, gender } = req.body;
+        const { username, password, email, telegram_id, interest, gender, fullname, birthday } = req.body;
         
         const user = await userRepository.createUser({
             username,
             password,
             email,
             telegram_id,
-            occupation,
-            gender
+            interest,
+            gender,
+            fullname,
+            birthday
         });
         
         if (!user) {
             return baseResponse(res, false, 400, 'Email already registered', null);
         }
         
-                    if (telegram_id) {
+        if (telegram_id) {
             try {
                 const telegramService = require('../services/telegram.service');
                 const telegramRepository = require('../repositories/telegram.repository');
                 
                 const welcomeMessage = `
-Hello ${username}! 👋 I'm Yumi, your personal mental wellness companion from YouMatter! 
+Hello ${fullname || username}! 👋 I'm Yumi, your personal mental wellness companion from YouMatter! 
                 
 I'm here to support you on your journey to better mental health and well-being. You can share your daily thoughts and feelings with me, and I'll be here to listen, provide feedback, and cheer you on.
 
@@ -135,15 +137,17 @@ exports.updateProfile = async (req, res) => {
             imageUrl = await uploadImageToCloudinary(req.file);
         }
         
-        const { username, email, occupation, gender, github_id } = req.body;
+        const { username, email, interest, gender, telegram_id, fullname, birthday } = req.body;
         
         const updateData = {};
         
         if (username) updateData.username = username;
         if (email) updateData.email = email;
-        if (occupation) updateData.occupation = occupation;
+        if (interest !== undefined) updateData.interest = interest;
         if (gender) updateData.gender = gender;
-        if (github_id) updateData.github_id = github_id;
+        if (telegram_id !== undefined) updateData.telegram_id = telegram_id;
+        if (fullname !== undefined) updateData.fullname = fullname;
+        if (birthday !== undefined) updateData.birthday = birthday;
         
         if (imageUrl || req.body.user_image_url) {
             updateData.user_image_url = imageUrl || req.body.user_image_url;

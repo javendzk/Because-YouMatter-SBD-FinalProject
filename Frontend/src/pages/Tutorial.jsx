@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from './Navbar'; // Import Navbar component
+import { useNavigate, useLocation } from 'react-router-dom';
+import Navbar from './Navbar';
+import { useAuth } from '../context/AuthContext';
 
 // Import the same mood colors used in Fill.jsx for consistency
 const MOOD_COLORS = {
@@ -13,6 +14,8 @@ const MOOD_COLORS = {
 
 const Tutorial = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedMood, setSelectedMood] = useState('awesome');
   const [moodDescription, setMoodDescription] = useState('');
@@ -24,11 +27,23 @@ const Tutorial = () => {
   const textareaRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Dummy user data for Navbar
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate('/signin');
+    }
+    
+    // If we have mood data from previous screen, use it
+    if (location.state?.mood) {
+      setSelectedMood(location.state.mood);
+    }
+  }, [isAuthenticated, navigate, location.state]);
+
+  // User data for Navbar
   const userData = {
-    loggedIn: false,
-    username: '',
-    profilePicture: ''
+    loggedIn: isAuthenticated(),
+    username: user?.username || '',
+    profilePicture: user?.profilePicture || ''
   };
 
   // Array of available moods
@@ -37,7 +52,7 @@ const Tutorial = () => {
   // Tutorial steps content
   const tutorialSteps = [
     {
-      title: "Welcome to YouMatter!",
+      title: `Welcome to YouMatter${user ? `, ${user.username}` : ''}!`,
       content: "Let's learn how to track your mood. This quick tutorial will show you how to use our app.",
       highlightElement: null
     },
@@ -63,7 +78,7 @@ const Tutorial = () => {
     },
     {
       title: "You're all set!",
-      content: "Now you know how to track your mood. Let's get started!",
+      content: "Now you know how to track your mood. Let's go to your dashboard!",
       highlightElement: null
     }
   ];
@@ -128,10 +143,10 @@ const Tutorial = () => {
       }, 1500);
     }
   };
-  
-  // Function to navigate to welcoming page
+    // Function to navigate to welcoming page
   const navigateToWelcoming = () => {
-    navigate('/welcoming', { 
+    // Instead of going through welcoming again, go straight to dashboard
+    navigate('/dashboard', { 
       state: { 
         mood: selectedMood,
         description: moodDescription,
@@ -284,9 +299,8 @@ const Tutorial = () => {
             onClick={handleSelectMood}
             className={`mood-button w-full bg-black text-white rounded-full py-4 font-medium text-lg transition-all duration-300 
               ${currentStep === 4 ? 'animate-pulse' : ''} 
-              hover:bg-gray-800 active:bg-gray-900`}
-          >
-            Select mood
+              hover:bg-gray-800 active:bg-gray-900`}          >
+            Go to Dashboard
           </button>
         </div>
       </div>

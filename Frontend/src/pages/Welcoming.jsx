@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import '../assets/styles/welcomingAnimation.css';
 import '../assets/styles/flameAnimation.css';
+import { useAuth } from '../context/AuthContext';
+import logService from '../services/logService';
 
 // Mood color constants based on design (matching Dashboard)
 const MOOD_COLORS = {
@@ -24,20 +26,71 @@ const MOOD_MESSAGES = {
 const Welcoming = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, isAuthenticated } = useAuth();
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [isNewUser, setIsNewUser] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Get mood from state or default to 'good' if not provided
     const mood = location.state?.mood || 'good';
+    const moodDescription = location.state?.description || '';
     const moodColor = MOOD_COLORS[mood] || MOOD_COLORS.good;
     const moodMessage = MOOD_MESSAGES[mood] || MOOD_MESSAGES.good;
 
+    useEffect(() => {
+        const checkUserStatus = async () => {
+            if (!isAuthenticated()) {
+                // Not logged in, redirect to sign in
+                navigate('/signin');
+                return;
+            }
+
+            try {
+                // Check if user has any logs (to determine if new user)
+                const response = await logService.getUserLogs();
+                
+                if (response.success) {
+                    // If user has no logs yet, they're considered new
+                    setIsNewUser(response.data.length === 0);
+                    
+                    // If we have mood data, submit the log
+                    if (location.state?.mood) {
+                        await submitMoodLog();
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking user status:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        const submitMoodLog = async () => {
+            try {
+                // Submit the mood log to the backend
+                await logService.createDailyLog({
+                    mood: mood,
+                    description: moodDescription
+                });
+            } catch (error) {
+                console.error('Error submitting mood log:', error);
+            }
+        };
+
+        checkUserStatus();
+    }, [navigate, isAuthenticated, mood, moodDescription, location.state]);
+
     // Simulate loading process
     useEffect(() => {
+        if (isLoading) return;
+        
         const timer = setTimeout(() => {
-            // Navigate to dashboard after loading completes (4 seconds)
-            navigate('/dashboard', {
-                state: { mood: mood }
-            });
+            // If new user, navigate to tutorial, otherwise to dashboard
+            if (isNewUser) {
+                navigate('/tutorial', { state: { mood } });
+            } else {
+                navigate('/dashboard', { state: { mood } });
+            }
         }, 4000);
 
         // Update progress animation
@@ -55,7 +108,7 @@ const Welcoming = () => {
             clearTimeout(timer);
             clearInterval(interval);
         };
-    }, [navigate, mood]);
+    }, [navigate, mood, isNewUser, isLoading]);
 
     // Dynamic styles based on mood
     const gradientStyle = {
@@ -66,6 +119,17 @@ const Welcoming = () => {
     const progressBarStyle = {
         backgroundColor: moodColor
     };
+    
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-indigo-50">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+                    <p className="mt-4 text-indigo-900">Loading your profile...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -79,7 +143,7 @@ const Welcoming = () => {
                 className="text-center max-w-xl w-full"
             >
                 <h1 className="text-3xl md:text-4xl font-bold text-indigo-700 mb-2">
-                    Welcome to YouMatter
+                    {user ? `Welcome, ${user.username}` : 'Welcome to YouMatter'}
                 </h1>
 
                 {/* Add corresponding mood image right after welcome text */}
@@ -125,7 +189,9 @@ const Welcoming = () => {
                     />
                 </div>
 
-                <p className="mt-2 text-gray-500 text-sm">Preparing your dashboard... {loadingProgress}%</p>
+                <p className="mt-2 text-gray-500 text-sm">
+                    {isNewUser ? 'Preparing your tutorial...' : 'Preparing your dashboard...'} {loadingProgress}%
+                </p>
 
                 {/* Mood-specific animation and main logo container */}
                 <div className="mt-8 mb-6">

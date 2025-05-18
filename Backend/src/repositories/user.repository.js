@@ -2,7 +2,7 @@ const db = require('../configs/pg.config');
 const bcrypt = require('bcrypt');
 
 
-exports.createUser = async ({ username, password, email, telegram_id, occupation, gender }) => {
+exports.createUser = async ({ username, password, email, telegram_id, interest, gender, fullname, birthday }) => {
     try {
         const emailCheck = await db.query(
             'SELECT * FROM users WHERE email = $1',
@@ -18,10 +18,10 @@ exports.createUser = async ({ username, password, email, telegram_id, occupation
 
         const result = await db.query(
             `INSERT INTO users 
-            (username, password, email, telegram_id, occupation, gender, last_login) 
-            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) 
-            RETURNING user_id, username, email, telegram_id, occupation, gender, last_login, streak_counter`,
-            [username, hashedPassword, email, telegram_id || null, occupation || null, gender || null]
+            (username, password, email, telegram_id, interest, gender, fullname, birthday, last_login) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP) 
+            RETURNING user_id, username, email, telegram_id, interest, gender, fullname, birthday, last_login, streak_counter`,
+            [username, hashedPassword, email, telegram_id || null, interest || null, gender || null, fullname || null, birthday || null]
         );
 
         return result.rows[0];
@@ -68,7 +68,7 @@ exports.loginUser = async ({ email, password }) => {
 exports.getUserById = async (userId) => {
     try {
         const result = await db.query(
-            'SELECT user_id, username, email, telegram_id, occupation, gender, user_image_url, last_login, streak_counter FROM users WHERE user_id = $1',
+            'SELECT user_id, username, email, telegram_id, interest, gender, fullname, birthday, user_image_url, last_login, streak_counter FROM users WHERE user_id = $1',
             [userId]
         );
 
@@ -84,7 +84,7 @@ exports.getUserById = async (userId) => {
 };
 
 
-exports.updateUserProfile = async (userId, { username, email, user_image_url, occupation, gender, github_id }) => {
+exports.updateUserProfile = async (userId, { username, email, user_image_url, interest, gender, telegram_id, fullname, birthday }) => {
     try {
         const updateFields = [];
         const values = [];
@@ -116,9 +116,9 @@ exports.updateUserProfile = async (userId, { username, email, user_image_url, oc
             values.push(user_image_url);
         }
 
-        if (occupation) {
-            updateFields.push(`occupation = $${paramCount++}`);
-            values.push(occupation);
+        if (interest !== undefined) {
+            updateFields.push(`interest = $${paramCount++}`);
+            values.push(interest);
         }
 
         if (gender) {
@@ -126,9 +126,19 @@ exports.updateUserProfile = async (userId, { username, email, user_image_url, oc
             values.push(gender);
         }
         
-        if (github_id) {
-            updateFields.push(`github_id = $${paramCount++}`);
-            values.push(github_id);
+        if (telegram_id !== undefined) {
+            updateFields.push(`telegram_id = $${paramCount++}`);
+            values.push(telegram_id);
+        }
+
+        if (fullname !== undefined) {
+            updateFields.push(`fullname = $${paramCount++}`);
+            values.push(fullname);
+        }
+
+        if (birthday !== undefined) {
+            updateFields.push(`birthday = $${paramCount++}`);
+            values.push(birthday);
         }
 
         if (updateFields.length === 0) {
@@ -140,7 +150,7 @@ exports.updateUserProfile = async (userId, { username, email, user_image_url, oc
         const result = await db.query(
             `UPDATE users SET ${updateFields.join(', ')} 
             WHERE user_id = $${paramCount} 
-            RETURNING user_id, username, email, telegram_id, occupation, gender, user_image_url, last_login, streak_counter`,
+            RETURNING user_id, username, email, telegram_id, interest, gender, fullname, birthday, user_image_url, last_login, streak_counter`,
             values
         );
 

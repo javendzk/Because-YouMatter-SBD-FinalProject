@@ -1,14 +1,17 @@
 // SignIn.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from './Navbar';
+import { useAuth } from '../context/AuthContext';
 
 const SignIn = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
     // User data for navbar
     const userData = {
@@ -35,16 +38,30 @@ const SignIn = () => {
                 duration: 0.3
             }
         }
-    };    const handleSignIn = (e) => {
+    };
+    
+    const handleSignIn = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-
-        // Mock authentication - replace with actual authentication later
-        setTimeout(() => {
+        setError('');
+        
+        try {
+            // Call the login function from our auth context
+            const result = await login({ email, password });
+            
+            if (result.success) {
+                // Login successful, navigate to welcome page as per flow requirements
+                navigate('/welcoming');
+            } else {
+                // Display error message
+                setError(result.message || 'Failed to sign in. Please try again.');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred. Please try again.');
+            console.error('Login error:', err);
+        } finally {
             setIsLoading(false);
-            // After sign in, redirect to Fill page to collect mood data
-            navigate('/fill');
-        }, 1500);
+        }
     };
 
     return (
@@ -93,14 +110,13 @@ const SignIn = () => {
                             placeholder="Enter your email"
                             autoComplete="email"
                         />
-                    </motion.div>
-
-                    <motion.div
+                    </motion.div>                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4, duration: 0.5 }}
                         className="mb-6"
-                    >                        <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="password">
+                    >
+                        <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="password">
                             Password
                         </label>
                         <input
@@ -118,7 +134,19 @@ const SignIn = () => {
                                 Forgot password?
                             </a>
                         </div>
-                    </motion.div>                    <motion.button
+                    </motion.div>
+
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm"
+                        >
+                            {error}
+                        </motion.div>
+                    )}
+
+                    <motion.button
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 0.5 }}

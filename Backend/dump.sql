@@ -6,9 +6,11 @@ CREATE TABLE users (
     username VARCHAR NOT NULL,
     password VARCHAR NOT NULL,
     email VARCHAR NOT NULL,
+    fullname VARCHAR,
     telegram_id BIGINT UNIQUE,
-    occupation VARCHAR,
+    interest VARCHAR,
     gender gender_enum,
+    birthday DATE,
     user_image_url TEXT, 
     last_login TIMESTAMP,
     logged_in_today BOOLEAN DEFAULT FALSE,
@@ -29,6 +31,8 @@ CREATE TABLE llm_responses (
     log_id UUID REFERENCES daily_logs(log_id) ON DELETE CASCADE,
     message TEXT NOT NULL,
     response TEXT NOT NULL,
+    tags TEXT[] DEFAULT '{}',
+    insight TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -73,3 +77,17 @@ BEFORE UPDATE OF last_login ON users
 FOR EACH ROW
 WHEN (NEW.last_login IS DISTINCT FROM OLD.last_login)
 EXECUTE FUNCTION update_streak_on_login();
+
+CREATE OR REPLACE FUNCTION get_users_with_birthday_today()
+RETURNS TABLE(user_id UUID, fullname VARCHAR, telegram_id BIGINT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT u.user_id, u.fullname, u.telegram_id
+    FROM users u
+    WHERE
+        u.birthday IS NOT NULL AND
+        u.telegram_id IS NOT NULL AND
+        EXTRACT(MONTH FROM u.birthday) = EXTRACT(MONTH FROM CURRENT_DATE) AND
+        EXTRACT(DAY FROM u.birthday) = EXTRACT(DAY FROM CURRENT_DATE);
+END;
+$$ LANGUAGE plpgsql;

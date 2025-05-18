@@ -1,22 +1,27 @@
 // SignUp.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from './Navbar';
+import { useAuth } from '../context/AuthContext';
 
-const SignUp = () => {    const navigate = useNavigate();    
+const SignUp = () => {
+    const navigate = useNavigate();
+    const { register } = useAuth();
+    
     const [fullName, setFullName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
-    const [age, setAge] = useState('');
+    const [telegramId, setTelegramId] = useState('');
+    const [interest, setInterest] = useState('');
     const [gender, setGender] = useState('');
-    const [hobbies, setHobbies] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [birthday, setBirthday] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [passwordError, setPasswordError] = useState('');
     const [ageError, setAgeError] = useState('');
+    const [generalError, setGeneralError] = useState('');
 
     // Calculate age from birthday
     const calculateAge = (birthDate) => {
@@ -34,12 +39,13 @@ const SignUp = () => {    const navigate = useNavigate();
         }
         
         return age.toString();
-    };    // Handle birthday change and update age automatically
+    };    
+    
+    // Handle birthday change and update age automatically
     const handleBirthdayChange = (e) => {
         const birthDate = e.target.value;
         setBirthday(birthDate);
         const calculatedAge = calculateAge(birthDate);
-        setAge(calculatedAge);
         
         // Validate age when birthday is changed
         const userAge = parseInt(calculatedAge);
@@ -47,6 +53,76 @@ const SignUp = () => {    const navigate = useNavigate();
             setAgeError('You must be at least 13 years old to register');
         } else {
             setAgeError('');
+        }
+    };
+    
+    // Validate password
+    const validatePassword = () => {
+        if (password !== confirmPassword) {
+            setPasswordError('Passwords do not match');
+            return false;
+        }
+        if (password.length < 8) {
+            setPasswordError('Password must be at least 8 characters long');
+            return false;
+        }
+        setPasswordError('');
+        return true;
+    };
+    
+    // Handle sign up submission
+    const handleSignUp = async (e) => {
+        e.preventDefault();
+        
+        // Reset errors
+        setPasswordError('');
+        setAgeError('');
+        setGeneralError('');
+        
+        // Validate form
+        if (!validatePassword()) {
+            return;
+        }
+        
+        // Validate age
+        const userAge = parseInt(calculateAge(birthday));
+        if (isNaN(userAge) || userAge < 13) {
+            setAgeError('You must be at least 13 years old to register');
+            return;
+        }
+        
+        setIsLoading(true);
+        
+        try {
+            // Prepare user data for registration
+            const userData = {
+                username,
+                password,
+                email,
+                fullname: fullName,
+                birthday,
+                gender: gender || undefined,
+                interest: interest || undefined,
+                telegram_id: telegramId ? parseInt(telegramId) : undefined
+            };
+            
+            // Call the register function from our auth context
+            const result = await register(userData);
+            
+            if (result.success) {
+                // Registration successful, navigate to login page
+                navigate('/signin', { 
+                    state: { message: 'Account created successfully. Please log in.' } 
+                });
+            } else {
+                // Display error message
+                setGeneralError(result.message || 'Registration failed. Please try again.');
+            }
+        } catch (err) {
+            setGeneralError('An unexpected error occurred. Please try again.');
+            console.error('Registration error:', err);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -75,39 +151,9 @@ const SignUp = () => {    const navigate = useNavigate();
                 duration: 0.3
             }
         }
-    };    const validateForm = () => {
-        // Validate password
-        if (password !== confirmPassword) {
-            setPasswordError('Passwords do not match');
-            return false;
-        }
-        if (password.length < 8) {
-            setPasswordError('Password must be at least 8 characters');
-            return false;
-        }
-        setPasswordError('');
-        
-        // Validate age (must be at least 13)
-        const userAge = parseInt(age);
-        if (isNaN(userAge) || userAge < 13) {
-            setAgeError('You must be at least 13 years old to register');
-            return false;
-        }
-        setAgeError('');
-        
-        return true;
-    };    const handleSignUp = (e) => {
-        e.preventDefault();
-        
-        if (!validateForm()) return;
-        
-        setIsLoading(true);        // Mock registration - replace with actual registration later
-        setTimeout(() => {
-            setIsLoading(false);
-            // After sign up, redirect to Fill page to collect mood data
-            navigate('/fill');
-        }, 1500);
-    };    return (
+    };    
+
+    return (
         <motion.div
             className="min-h-screen bg-blue-50 mobile-container no-scroll-bounce ios-viewport-fix"
             initial="initial"
@@ -118,7 +164,7 @@ const SignUp = () => {    const navigate = useNavigate();
             {/* Using the common Navbar component */}
             <Navbar userData={userData} />
 
-            <div className="max-w-md mx-auto mt-16 sm:mt-20 p-4 sm:p-6 bg-white rounded-lg shadow-lg mb-10 mx-4 sm:mx-auto">
+            <div className="max-w-md mx-4 sm:mx-auto mt-16 sm:mt-20 p-4 sm:p-6 bg-white rounded-lg shadow-lg mb-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -133,6 +179,12 @@ const SignUp = () => {    const navigate = useNavigate();
                     <h2 className="text-xl sm:text-2xl font-bold text-indigo-900">Create Your Account</h2>
                     <p className="text-gray-600 text-sm sm:text-base">Start your mental wellness journey today</p>
                 </motion.div>
+
+                {generalError && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                        {generalError}
+                    </div>
+                )}
 
                 <form onSubmit={handleSignUp} className="space-y-4">
                     <motion.div
@@ -229,7 +281,6 @@ const SignUp = () => {    const navigate = useNavigate();
                                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px] mobile-input"
                                 value={gender}
                                 onChange={(e) => setGender(e.target.value)}
-                                required
                             >
                                 <option value="">Select Gender</option>
                                 <option value="male">Male</option>
@@ -247,15 +298,33 @@ const SignUp = () => {    const navigate = useNavigate();
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 0.5 }}
                     >
-                        <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="hobbies">
+                        <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="interest">
                             Hobbies & Interests
                         </label>
                         <textarea 
-                            id="hobbies"
+                            id="interest"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px] mobile-input"
-                            value={hobbies}
-                            onChange={(e) => setHobbies(e.target.value)}
+                            value={interest}
+                            onChange={(e) => setInterest(e.target.value)}
                             placeholder="What do you enjoy doing?"
+                        />
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.5 }}
+                    >
+                        <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="telegramId">
+                            Telegram ID (Optional)
+                        </label>
+                        <input 
+                            id="telegramId"
+                            type="text"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mobile-input min-h-[44px]"
+                            value={telegramId}
+                            onChange={(e) => setTelegramId(e.target.value)}
+                            placeholder="Enter your Telegram ID"
                         />
                     </motion.div>
                     
@@ -296,7 +365,8 @@ const SignUp = () => {    const navigate = useNavigate();
                             required
                             placeholder="Confirm your password"
                             autoComplete="new-password"
-                        />                    </motion.div>
+                        />                    
+                    </motion.div>
                     
                     {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
                     
@@ -332,14 +402,16 @@ const SignUp = () => {    const navigate = useNavigate();
                 >
                     <p className="text-gray-600">
                         Already have an account?{' '}
-                        <button
-                            onClick={() => navigate('/signin')}
+                        <Link
+                            to="/signin"
                             className="text-indigo-900 font-medium hover:underline touch-target"
                         >
                             Sign In
-                        </button>
+                        </Link>
                     </p>
-                </motion.div>                <motion.div
+                </motion.div>                
+                
+                <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.9, duration: 0.5 }}

@@ -1,4 +1,4 @@
-// Dashboard.jsx - Updated for mobile responsiveness
+// Dashboard.jsx - Updated with backend integration
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Edit, ChevronDown, Calendar, X, Pencil, Filter, RefreshCcw } from "lucide-react";
@@ -6,6 +6,9 @@ import Navbar from "./Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import '../assets/styles/flameAnimation.css';
 import MoodHistoryTimeline from "../components/MoodHistoryTimeline";
+import { useAuth } from "../context/AuthContext";
+import logService from "../services/logService";
+import rewardService from "../services/rewardService";
 
 // Mood color constants based on design
 const MOOD_COLORS = {
@@ -19,69 +22,192 @@ const MOOD_COLORS = {
 export default function Dashboard() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { user, isAuthenticated, logout } = useAuth();
     const todayMood = location.state?.mood || null;
     
     const [userData, setUserData] = useState({
-        fullName: "Katherine Smith",
-        username: "kat_smith",
-        email: "katss@example.com",
-        age: "21",
-        birthday: "2003-06-20",
-        gender: "female",
-        hobbies: "Reading, painting, and spending time in bed",
+        fullName: "",
+        username: "",
+        email: "",
+        age: "",
+        birthday: "",
+        gender: "",
+        interest: "",
         profilePicture: "/src/assets/placeholder.jpg",
-        streakDays: 7,
-        totalDays: 12,
-        goodDays: 8,
-        stressedDays: 4,
-        loggedIn: true // Always true for development
+        streakDays: 0,
+        totalDays: 0,
+        goodDays: 0,
+        stressedDays: 0,
+        loggedIn: true
     });
+
+    const [moodHistory, setMoodHistory] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
+    const [calendarDate, setCalendarDate] = useState(new Date());
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteLogId, setDeleteLogId] = useState(null);
+
+    // Prepare weekly mood data for the chart
+    const weeklyMoodData = [5, 7, 4, 8, 6, 9, 7];
+    const maxMoodValue = Math.max(...weeklyMoodData);
+
+    // Check if user is authenticated
+    useEffect(() => {
+        if (!isAuthenticated()) {
+            navigate('/signin');
+            return;
+        }
+
+        fetchUserData();
+        fetchMoodHistory();
+    }, [isAuthenticated, navigate]);
+
+    // Fetch user data from backend
+    const fetchUserData = async () => {
+        try {
+            setIsLoading(true);
+            
+            // Set basic user data from auth context
+            if (user) {
+                // Calculate age from birthday if available
+                let age = "";
+                if (user.birthday) {
+                    const birthDate = new Date(user.birthday);
+                    const today = new Date();
+                    age = today.getFullYear() - birthDate.getFullYear();
+                    
+                    // Adjust age if birthday hasn't occurred yet this year
+                    const m = today.getMonth() - birthDate.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                        age--;
+                    }
+                }
+                
+                setUserData(prev => ({
+                    ...prev,
+                    fullName: user.fullname || "",
+                    username: user.username || "",
+                    email: user.email || "",
+                    birthday: user.birthday || "",
+                    gender: user.gender || "",
+                    interest: user.interest || "",
+                    age: age.toString(),
+                    profilePicture: user.profileImage || "/src/assets/placeholder.jpg"
+                }));
+            }
+            
+            // Get streak information
+            const streakResponse = await rewardService.getUserStreak();
+            if (streakResponse.success) {
+                setUserData(prev => ({
+                    ...prev,
+                    streakDays: streakResponse.data.currentStreak || 0
+                }));
+            }
+            
+            // Get mood statistics
+            const statsResponse = await logService.calculateUserStats();
+            setUserData(prev => ({
+                ...prev,
+                totalDays: statsResponse.totalDays || 0,
+                goodDays: statsResponse.goodDays || 0,
+                stressedDays: statsResponse.stressedDays || 0
+            }));
+            
+        } catch (err) {
+            console.error("Error fetching user data:", err);
+            setError("Failed to load user data. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Fetch mood history
+    const fetchMoodHistory = async () => {
+        try {
+            const response = await logService.getUserLogs();
+            
+            if (response.success) {
+                // Transform logs data to match the expected format for MoodHistoryTimeline
+                const formattedLogs = response.data.map(log => {
+                    const date = new Date(log.date);
+                    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    
+                    // Format date components
+                    const day = date.getDate();
+                    const month = months[date.getMonth()].substring(0, 3);
+                    const weekday = weekdays[date.getDay()];
+                    
+                    // Format mood
+                    const moodFormatted = log.mood.charAt(0).toUpperCase() + log.mood.slice(1);
+                    
+                    // Check if the log date is today
+                    const today = new Date();
+                    const isToday = date.toDateString() === today.toDateString();
+                    
+                    // Generate tags from AI feedback if available
+                    const tags = log.ai_analysis ? 
+                        log.ai_analysis.tags || ["mood"] : 
+                        ["mood"];
+                    
+                    return {
+                        id: log.log_id,
+                        day,
+                        month,
+                        weekday,
+                        mood: moodFormatted,
+                        color: MOOD_COLORS[moodFormatted.toUpperCase()],
+                        imageSrc: `/src/assets/emotions/${moodFormatted}.png`,
+                        description: log.description || "No description provided.",
+                        tags,
+                        ai_insight: log.ai_analysis?.sentiment_analysis || "AI analysis not available yet.",
+                        isToday
+                    };
+                });
+                
+                setMoodHistory(formattedLogs);
+            }
+        } catch (err) {
+            console.error("Error fetching mood history:", err);
+            setError("Failed to load mood history. Please try again.");
+        }
+    };
+
+    // Handle log deletion
+    const handleDeleteLog = async (logId) => {
+        setIsDeleting(true);
+        setDeleteLogId(logId);
+        
+        try {
+            const response = await logService.deleteLog(logId);
+            
+            if (response.success) {
+                // Remove the deleted log from state
+                setMoodHistory(prev => prev.filter(log => log.id !== logId));
+                
+                // Update user stats after deletion
+                fetchUserData();
+            } else {
+                setError("Failed to delete log. Please try again.");
+            }
+        } catch (err) {
+            console.error("Error deleting log:", err);
+            setError("An error occurred while deleting the log.");
+        } finally {
+            setIsDeleting(false);
+            setDeleteLogId(null);
+        }
+    };
 
     // Update mood history if we have today's mood from the welcoming page
     useEffect(() => {
         if (todayMood) {
-            // Create a new date object for today
-            const today = new Date();
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            
-            // Format today's date
-            const day = today.getDate();
-            const month = months[today.getMonth()].substring(0, 3);
-            const weekday = weekdays[today.getDay()];
-            
-            // Capitalize first letter of mood
-            const formattedMood = todayMood.charAt(0).toUpperCase() + todayMood.slice(1);
-            
-            // Create a new mood entry
-            const newMoodEntry = {
-                day,
-                month,
-                weekday,
-                mood: formattedMood,
-                color: MOOD_COLORS[formattedMood.toUpperCase()],
-                imageSrc: `/src/assets/emotions/${formattedMood}.png`,
-                description: "Today's mood entry.",
-                tags: ["today"],
-                isToday: true
-            };
-            
-            // Add the new mood entry to the beginning of the history
-            setMoodHistory(prevHistory => {
-                // Check if we already have an entry for today
-                const existingTodayIndex = prevHistory.findIndex(entry => 
-                    entry.day === day && entry.month === month);
-                
-                if (existingTodayIndex >= 0) {
-                    // Replace existing today entry
-                    const newHistory = [...prevHistory];
-                    newHistory[existingTodayIndex] = newMoodEntry;
-                    return newHistory;
-                } else {
-                    // Add new entry at the beginning
-                    return [newMoodEntry, ...prevHistory];
-                }
-            });
+            fetchMoodHistory(); // Refresh the mood history
         }
     }, [todayMood]);
     
@@ -100,7 +226,7 @@ export default function Dashboard() {
             opacity: 1,
             y: 0,
             transition: {
-                duration: 0.5
+                duration: 0.4
             }
         },
         exit: {
@@ -110,138 +236,19 @@ export default function Dashboard() {
                 duration: 0.3
             }
         }
-    }; const [currentDate] = useState(new Date());
-    const [day] = useState(21);
-    const [showCalendar, setShowCalendar] = useState(false);
-    const [selectedMood, setSelectedMood] = useState(null);
-    const [editText, setEditText] = useState("");
-    const [selectedMonth, setSelectedMonth] = useState("May");
-    const [selectedYear, setSelectedYear] = useState("2025");
-
-    // Profile editing states
-    const [showProfileEdit, setShowProfileEdit] = useState(false); const [editedProfile, setEditedProfile] = useState({ ...userData });    // Mood options
-    const moods = [
-        { name: "Awesome", imageSrc: "/src/assets/emotions/Awesome.png", color: MOOD_COLORS.AWESOME },
-        { name: "Good", imageSrc: "/src/assets/emotions/Good.png", color: MOOD_COLORS.GOOD },
-        { name: "Okay", imageSrc: "/src/assets/emotions/Okay.png", color: MOOD_COLORS.OKAY },
-        { name: "Bad", imageSrc: "/src/assets/emotions/Bad.png", color: MOOD_COLORS.BAD },
-        { name: "Terrible", imageSrc: "/src/assets/emotions/Terrible.png", color: MOOD_COLORS.TERRIBLE }
-    ];
-    
-    // Set current mood based on today's mood if available
-    const [currentMood, setCurrentMood] = useState(() => {
-        if (todayMood) {
-            // Format mood name for display (capitalize first letter)
-            const formattedMood = todayMood.charAt(0).toUpperCase() + todayMood.slice(1);
-            return {
-                mood: formattedMood,
-                color: MOOD_COLORS[formattedMood.toUpperCase()],
-                imageSrc: `/src/assets/emotions/${formattedMood}.png`,
-                description: "How you're feeling today."
-            };
-        }
-        
-        // Default mood if no today's mood available
-        return {
-            mood: "Awesome",
-            color: MOOD_COLORS.AWESOME,
-            imageSrc: "/src/assets/emotions/Awesome.png",
-            description:
-                "Hung out with my friends! We went out for the first time in a whileee, not to mention all the sweets we ate, tons of gelato, cheesecake, and Eva's Birthday Cake! Though her birthday was weeks ago, it's still nice to surprise her!"
-        };
-    });
-
-    const [expandedIndex, setExpandedIndex] = useState(null); const [moodHistory, setMoodHistory] = useState([
-        {
-            day: 9,
-            month: "May",
-            weekday: "Mon",
-            mood: "Awesome",
-            color: MOOD_COLORS.AWESOME,
-            imageSrc: "/src/assets/emotions/Awesome.png",
-            description: "Hung out with my friends! So fun and sweet! 🍰",
-            tags: ["friends", "food", "celebration"]
-        },
-        {
-            day: 7,
-            month: "May",
-            weekday: "Sat",
-            mood: "Okay",
-            color: MOOD_COLORS.OKAY,
-            imageSrc: "/src/assets/emotions/Okay.png",
-            description: "It was a chill day.",
-            tags: ["life"]
-        },
-        {
-            day: 3,
-            month: "May",
-            weekday: "Tue",
-            mood: "Good",
-            color: MOOD_COLORS.GOOD,
-            imageSrc: "/src/assets/emotions/Good.png",
-            description: "Had a cozy dinner w/ fam + Whiskey! 🐈",
-            tags: ["family", "pet"]
-        },
-        {
-            day: 1,
-            month: "May",
-            weekday: "Sun",
-            mood: "Awesome",
-            color: MOOD_COLORS.AWESOME,
-            imageSrc: "/src/assets/emotions/Awesome.png",
-            description: "Had an amazing time hanging out with your friends...",
-            tags: ["friends", "fun"]
-        }, {
-            day: 26,
-            month: "April",
-            weekday: "Wed",
-            mood: "Okay",
-            color: MOOD_COLORS.OKAY,
-            imageSrc: "/src/assets/emotions/Okay.png",
-            description: "...",
-            tags: ["regular"]
-        }
-    ]);
-
-    const weeklyMoodData = [4, 7, 3, 8, 5, 9, 4];
-    const maxMoodValue = Math.max(...weeklyMoodData);
-
-    const formatDate = (date) => {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        return date.toLocaleDateString(undefined, options);
-    }; const handleCalendarClick = (day) => {
-        const mood = moodHistory.find((m) => m.day === day && m.month === selectedMonth);
-        if (mood) {
-            setSelectedMood(mood);
-            setEditText(mood.description);
-        }
-    }; const handleSaveEdit = () => {
-        setMoodHistory(prev => prev.map(m => m === selectedMood ? { ...m, description: editText } : m));
-        setSelectedMood(null);
     };
 
-    // Calendar helper functions
-    const getDaysInMonth = (month, year) => {
-        const monthIndex = ["January", "February", "March", "April", "May", "June", "July",
-            "August", "September", "October", "November", "December"].indexOf(month);
-        return new Date(parseInt(year), monthIndex + 1, 0).getDate();
-    };
-
-    const getFirstDayOfMonth = (month, year) => {
-        const monthIndex = ["January", "February", "March", "April", "May", "June", "July",
-            "August", "September", "October", "November", "December"].indexOf(month);
-        return new Date(parseInt(year), monthIndex, 1).getDay(); // 0 for Sunday, 1 for Monday, etc.
-    };
-
-    // Get days in the current selected month
-    const daysInSelectedMonth = getDaysInMonth(selectedMonth, selectedYear);
-    const firstDayOfSelectedMonth = getFirstDayOfMonth(selectedMonth, selectedYear);
-
-    // Handle profile edit save
-    const handleProfileSave = () => {
-        setUserData(editedProfile);
-        setShowProfileEdit(false);
-    };
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-indigo-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="mt-4 text-indigo-900 font-medium">Loading your dashboard...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <motion.div

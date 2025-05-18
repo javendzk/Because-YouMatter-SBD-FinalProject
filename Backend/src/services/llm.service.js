@@ -12,16 +12,21 @@ exports.generateFeedback = async (dayDescription, mood) => {
             User's mood: ${mood}
             
             Based on the above information, provide the following:
-            1. A short, cheerful, and encouraging response celebrating their positive mood (1-2 sentences)
-            2. A brief affirmation that reinforces their positive state and encourages them to keep it up (1 sentence)
+            1. A personalized, cheerful response celebrating their positive mood that acknowledges specific aspects of their day if mentioned.
+            2. Suggest 2-3 activities or things they could do tomorrow to maintain this positive energy.
+            3. A warm, encouraging message as if you're their supportive friend who is genuinely happy for them.
             
             Make your response upbeat and happy, focusing on maintaining their positive emotional state.
             
             Format your response as a JSON object with these exact keys:
             {
-                "webMessage": "Your cheerful response here", 
-                "telegramMessage": "Your positive affirmation here"
+                "webMessage": "Your cheerful response followed by suggested activities for tomorrow", 
+                "telegramMessage": "Your warm, friendly message as their companion who is happy for their good day"
             }
+            
+            The webMessage should be like: "We're glad that you had an amazing time [Name]! Well done and keep up the spirit! To commemorate today's mood, here's a couple of things you might want to do tomorrow: [Suggestions]"
+            
+            The telegramMessage should be meaningful, helpful, and sound like a supportive friend who is celebrating with them.
             `;
         } else {
             promptTemplate = `
@@ -29,16 +34,21 @@ exports.generateFeedback = async (dayDescription, mood) => {
             User's mood: ${mood}
             
             Based on the above information, provide the following:
-            1. A short, supportive, and empathetic response to the user that acknowledges their feelings (1-2 sentences)
-            2. A brief constructive suggestion or coping strategy to help improve their wellbeing (1 sentence)
+            1. A personalized, empathetic response that validates their feelings and shows understanding.
+            2. Suggest 2-3 practical coping strategies or self-care activities that might help improve their day.
+            3. A supportive, encouraging message as if you're their caring friend who wants to help them feel better.
             
-            Make your response warm, caring and supportive. Provide practical advice if their mood is 'bad' or 'terrible'.
+            Make your response warm, caring and supportive. Provide practical advice tailored to their specific situation.
             
             Format your response as a JSON object with these exact keys:
             {
-                "webMessage": "Your supportive response here", 
-                "telegramMessage": "Your suggestion or coping strategy here"
+                "webMessage": "Your empathetic response followed by suggested coping activities", 
+                "telegramMessage": "Your supportive message as a caring friend who is there for them"
             }
+            
+            The webMessage should acknowledge their feelings, validate them, and offer practical steps to help improve their mood.
+            
+            The telegramMessage should be meaningful, helpful, and sound like a supportive friend who genuinely cares and wants to cheer them up.
             `;
         }
 
@@ -73,13 +83,13 @@ exports.generateFeedback = async (dayDescription, mood) => {
             
             if (mood === 'awesome' || mood === 'good') {
                 parsedResponse = {
-                    webMessage: "That's fantastic! We're thrilled to see you're having a great day!",
-                    telegramMessage: "Keep riding this positive wave and spread the joy!"
+                    webMessage: "That's fantastic! We're thrilled to see you're having a great day! To keep this positive momentum, consider trying some mindfulness exercises tomorrow, spending time in nature, or connecting with someone who makes you happy.",
+                    telegramMessage: "I'm genuinely happy that things are going well for you! These good moments are worth celebrating - you deserve this happiness! Remember that you're doing great, and I'm here cheering you on every step of the way. Keep sharing your journey with me!"
                 };
             } else {
                 parsedResponse = {
-                    webMessage: "Thank you for sharing your feelings with us. It's okay to have days like this.",
-                    telegramMessage: "Remember to be kind to yourself and take one step at a time."
+                    webMessage: "Thank you for sharing your feelings with us. It's completely okay to have days like this. To help improve tomorrow, try some gentle self-care activities like a short walk, listening to your favorite music, or practicing deep breathing for a few minutes.",
+                    telegramMessage: "I hear you, and what you're feeling is valid. Everyone has difficult days, and I want you to know I'm right here with you through this. Be gentle with yourself - you're doing better than you think. Tomorrow brings new possibilities, and I believe in your strength to get through this. I'm here whenever you need someone to talk to."
                 };
             }
         }
@@ -92,8 +102,8 @@ exports.generateFeedback = async (dayDescription, mood) => {
         return {
             message: JSON.stringify({ dayDescription, mood }),
             response: JSON.stringify({
-                webMessage: "Thank you for sharing your day with us. Keep up the good work!",
-                telegramMessage: "Remember to take care of yourself and stay positive!"
+                webMessage: "Thank you for sharing your day with us. To help maintain your wellbeing, consider trying mindfulness exercises, connecting with loved ones, or engaging in activities that bring you joy.",
+                telegramMessage: "I appreciate you sharing your feelings with me. Remember that I'm always here to listen and support you. Take care of yourself today - you deserve kindness and compassion, especially from yourself."
             })
         };
     }

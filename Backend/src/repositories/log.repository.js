@@ -3,15 +3,32 @@ const db = require('../configs/pg.config');
 
 exports.createDailyLog = async ({ userId, day_description, mood }) => {
     try {
-        // Use Jakarta date for consistency
-        const result = await db.query(
-            `INSERT INTO daily_logs 
-            (user_id, date, day_description, mood)
-            VALUES ($1, (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta'), $2, $3)
-            RETURNING *`,
-            [userId, day_description, mood]
+        const existingLog = await db.query(
+            `SELECT * FROM daily_logs 
+            WHERE user_id = $1 AND date = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`,
+            [userId]
         );
-        return result.rows[0];
+        
+        if (existingLog.rows.length > 0) {
+            const result = await db.query(
+                `UPDATE daily_logs 
+                SET day_description = $1, mood = $2, time = (CURRENT_TIME AT TIME ZONE 'Asia/Jakarta')
+                WHERE log_id = $3
+                RETURNING *`,
+                [day_description, mood, existingLog.rows[0].log_id]
+            );
+            return result.rows[0];
+        } 
+        else {
+            const result = await db.query(
+                `INSERT INTO daily_logs 
+                (user_id, date, day_description, mood)
+                VALUES ($1, (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta'), $2, $3)
+                RETURNING *`,
+                [userId, day_description, mood]
+            );
+            return result.rows[0];
+        }
     } catch (error) {
         console.error('Error in createDailyLog repository:', error);
         throw error;

@@ -40,6 +40,36 @@ exports.register = async (req, res) => {
             return baseResponse(res, false, 400, 'Email already registered', null);
         }
         
+                    if (telegram_id) {
+            try {
+                const telegramService = require('../services/telegram.service');
+                const telegramRepository = require('../repositories/telegram.repository');
+                
+                const welcomeMessage = `
+Hello ${username}! 👋 I'm Yumi, your personal mental wellness companion from YouMatter! 
+                
+I'm here to support you on your journey to better mental health and well-being. You can share your daily thoughts and feelings with me, and I'll be here to listen, provide feedback, and cheer you on.
+
+Remember to log your mood daily to maintain your streak and unlock special rewards! 
+
+Looking forward to our journey together! 💪
+                `;
+                
+                await telegramService.sendTelegramMessage(telegram_id, welcomeMessage);
+                
+                await telegramRepository.createTelegramLog({
+                    userId: user.user_id,
+                    messageContent: welcomeMessage
+                });
+                
+                console.log(`Welcome message sent to user ${username} via Telegram`);
+            } catch (telegramError) {
+                console.error('Failed to send Telegram welcome message:', telegramError);
+            }
+        } else {
+            console.log(`User ${username} registered without Telegram ID`);
+        }
+        
         return baseResponse(res, true, 201, 'User registered successfully', user);
     } catch (error) {
         console.error('Register controller error:', error);

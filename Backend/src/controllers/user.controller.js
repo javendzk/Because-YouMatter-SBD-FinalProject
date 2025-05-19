@@ -82,14 +82,22 @@ Looking forward to our journey together! 💪
 
 exports.login = async (req, res) => {
     try {
+        console.log('=== LOGIN REQUEST RECEIVED ===');
+        console.log('Headers:', req.headers);
+        console.log('Body:', req.body);
+        
         const { email, password } = req.body;
         
+        console.log('Attempting login for email:', email);
         const result = await userRepository.loginUser({ email, password });
+        console.log('Login result:', { success: result.success, message: result.message });
         
         if (!result.success) {
+            console.log('Login failed:', result.message);
             return baseResponse(res, false, 401, result.message, null);
         }
         
+        console.log('Login successful for user:', result.user.username);
         const token = jwt.sign(
             { 
                 user_id: result.user.user_id,
@@ -98,13 +106,14 @@ exports.login = async (req, res) => {
             }, 
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
-        );
-        return baseResponse(res, true, 200, 'Login successful', {
+        );        return baseResponse(res, true, 200, 'Login successful', {
             token,
             user: result.user
         });
     } catch (error) {
-        console.error('Login controller error:', error);
+        console.error('=== LOGIN ERROR ===');
+        console.error('Error details:', error);
+        console.error('Stack trace:', error.stack);
         return baseResponse(res, false, 500, 'Failed to login', null);
     }
 };

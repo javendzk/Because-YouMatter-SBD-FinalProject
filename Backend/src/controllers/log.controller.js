@@ -9,21 +9,41 @@ exports.createDailyLog = async (req, res) => {
         const userId = req.user.user_id;
         const { day_description, mood } = req.body;
         
+        // Let the repository handle the check and update/create logic
         const dailyLog = await logRepository.createDailyLog({
             userId,
             day_description,
             mood
         });
         
-        const feedbackData = await llmService.generateFeedback(day_description, mood);
+        // Only update streak if this is a new log (not an update)
+        const isNewLog = !await logRepository.hasPreviousDailyLogToday(userId, dailyLog.log_id);
+        if (isNewLog) {
+            // Update streak counter after creating a new log
+            await logRepository.updateUserStreak(userId);
+        }
+          const feedbackData = await llmService.generateFeedback(day_description, mood);
         
-        await llmRepository.createResponse({
-            logId: dailyLog.log_id,
-            message: feedbackData.message,
-            response: feedbackData.response,
-            tags: feedbackData.tags,
-            insight: feedbackData.insight
-        });
+        // Check if there's already an LLM response for this log and update it
+        const existingResponse = await llmRepository.getResponseByLogId(dailyLog.log_id);
+        
+        if (existingResponse) {
+            await llmRepository.updateResponse({
+                logId: dailyLog.log_id,
+                message: feedbackData.message,
+                response: feedbackData.response,
+                tags: feedbackData.tags,
+                insight: feedbackData.insight
+            });
+        } else {
+            await llmRepository.createResponse({
+                logId: dailyLog.log_id,
+                message: feedbackData.message,
+                response: feedbackData.response,
+                tags: feedbackData.tags,
+                insight: feedbackData.insight
+            });
+        }
         
         return baseResponse(res, true, 201, 'Daily log created successfully', dailyLog);
     } catch (error) {

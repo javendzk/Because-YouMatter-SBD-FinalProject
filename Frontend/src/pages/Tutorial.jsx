@@ -26,10 +26,10 @@ const Tutorial = () => {
   
   const textareaRef = useRef(null);
   const buttonRef = useRef(null);
-
   // Check if user is authenticated
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
+      console.log('Tutorial: User not authenticated, redirecting to signin');
       navigate('/signin');
     }
     
@@ -41,7 +41,7 @@ const Tutorial = () => {
 
   // User data for Navbar
   const userData = {
-    loggedIn: isAuthenticated(),
+    loggedIn: isAuthenticated,
     username: user?.username || '',
     profilePicture: user?.profilePicture || ''
   };

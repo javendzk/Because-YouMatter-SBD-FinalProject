@@ -17,6 +17,27 @@ exports.createResponse = async ({ logId, message, response, tags, insight }) => 
     }
 };
 
+exports.updateResponse = async ({ logId, message, response, tags, insight }) => {
+    try {
+        const result = await db.query(
+            `UPDATE llm_responses 
+            SET message = $1, response = $2, tags = $3, insight = $4
+            WHERE log_id = $5
+            RETURNING *`,
+            [message, response, tags, insight, logId]
+        );
+
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error in updateResponse repository:', error);
+        throw error;
+    }
+};
+
 
 exports.getResponseById = async (responseId) => {
     try {

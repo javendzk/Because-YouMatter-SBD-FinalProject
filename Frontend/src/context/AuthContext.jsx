@@ -9,16 +9,31 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication status
+  const updateAuthStatus = () => {
+    const status = userService.isAuthenticated() && user !== null;
+    setIsAuthenticated(status);
+    console.log('Auth status updated:', status, 'User:', user ? 'exists' : 'null');
+    return status;
+  };
+
+  // Update auth status when user changes
+  useEffect(() => {
+    updateAuthStatus();
+  }, [user]);
 
   // Load user data on initial mount if token exists
   useEffect(() => {
     const loadUser = async () => {
       if (userService.isAuthenticated()) {
         try {
-          setLoading(true);
-          const response = await userService.getProfile();
+          setLoading(true);          const response = await userService.getProfile();
           if (response.success) {
             setUser(response.data);
+            // Update auth status after loading user
+            updateAuthStatus();
           } else {
             // Handle unsuccessful but not error responses
             userService.logout();
@@ -36,21 +51,41 @@ export const AuthProvider = ({ children }) => {
 
     loadUser();
   }, []);
-
   // Login function
   const login = async (credentials) => {
     try {
+      console.log('=== AUTH CONTEXT: LOGIN ATTEMPT ===');
+      console.log('Credentials:', { email: credentials.email, password: '******' });
+      
       setLoading(true);
       setError(null);
       const response = await userService.login(credentials);
+      
+      console.log('AUTH CONTEXT: Login response received:', response);
+      console.log('Response structure:', {
+        success: response.success,
+        message: response.message,
+        hasData: !!response.data,
+        hasPayload: !!response.payload
+      });
+      
       if (response.success) {
-        setUser(response.data.user);
+        console.log('AUTH CONTEXT: Login successful, setting user data');
+        console.log('User data location:', response.data ? 'data field' : (response.payload ? 'payload field' : 'unknown'));
+        
+        // Check both payload and data for backward compatibility
+        const userData = response.data?.user || response.payload?.user || response.data || response.payload;
+        console.log('Extracted user data:', userData ? 'Present' : 'Missing');        
+        setUser(userData);
+        updateAuthStatus(); // Update auth status after user set
         return { success: true };
       } else {
+        console.log('AUTH CONTEXT: Login failed:', response.message);
         setError(response.message || 'Login failed');
         return { success: false, message: response.message };
       }
     } catch (err) {
+      console.error('AUTH CONTEXT: Login error details:', err);
       const errorMessage = err.response?.data?.message || 'Login failed';
       setError(errorMessage);
       return { success: false, message: errorMessage };
@@ -79,20 +114,20 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
   // Logout function
   const logout = () => {
     userService.logout();
     setUser(null);
+    updateAuthStatus(); // Update auth status after logout
   };
 
   // Update profile function
   const updateProfile = async (profileData) => {
     try {
-      setLoading(true);
-      const response = await userService.updateProfile(profileData);
+      setLoading(true);      const response = await userService.updateProfile(profileData);
       if (response.success) {
         setUser(response.data);
+        updateAuthStatus(); // Update auth status after profile update
         return { success: true };
       } else {
         setError(response.message || 'Failed to update profile');
@@ -106,12 +141,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  // Check if user is authenticated
-  const isAuthenticated = () => {
-    return userService.isAuthenticated() && user !== null;
-  };
-
+  
   // Context value
   const value = {
     user,
@@ -121,7 +151,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
-    isAuthenticated
+    isAuthenticated // Using the state variable for consistent behavior
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

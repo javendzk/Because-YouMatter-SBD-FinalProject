@@ -1,18 +1,29 @@
 import { useState } from 'react';
-import { Calendar, Filter, Edit, ChevronDown, ExternalLink, Trash2 } from 'lucide-react';
+import { Calendar, Filter, Edit, ChevronDown, ExternalLink, Trash2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Import the same mood colors from Dashboard
 const MOOD_COLORS = {
-    AWESOME: "#FDDD6F", // Yellow
-    GOOD: "#46CD87",    // Green
-    OKAY: "#FF8AA6",    // Pink
-    BAD: "#FF7D35",     // Orange
-    TERRIBLE: "#9FC0FF"  // Light Blue
+    awesome: "#FDDD6F", // Yellow
+    good: "#46CD87",    // Green
+    okay: "#FF8AA6",    // Pink
+    bad: "#FF7D35",     // Orange
+    terrible: "#9FC0FF"  // Light Blue
 };
 
 export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, onDeleteLog, isDeleting, deleteLogId }) {
     const [expandedIndex, setExpandedIndex] = useState(null);
+    const [confirmDelete, setConfirmDelete] = useState(null);
+      // Log the incoming data
+    console.log("MoodHistoryTimeline received data:", moodHistoryData);
+    console.log("MoodHistoryTimeline checking tags and insights:", 
+        moodHistoryData.map(mood => ({
+            id: mood.id,
+            tags: mood.tags, 
+            tags_type: Array.isArray(mood.tags) ? 'array' : typeof mood.tags,
+            ai_insight: mood.ai_insight
+        }))
+    );
 
     // Group moods by month
     const groupByMonth = () => {
@@ -23,18 +34,63 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
         }));
     };
 
-    const groupedMoods = groupByMonth();
-
-    // Handle delete log
+    const groupedMoods = groupByMonth();    // Handle delete log
     const handleDelete = (e, logId) => {
         e.stopPropagation();
+        setConfirmDelete(logId);
+    };
+
+    // Confirm delete
+    const confirmDeleteLog = (logId) => {
         if (onDeleteLog) {
             onDeleteLog(logId);
         }
+        setConfirmDelete(null);
     };
 
     return (
         <div className="bg-white rounded-3xl shadow-md p-6">
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {confirmDelete && (
+                    <motion.div 
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div 
+                            className="bg-white rounded-xl p-5 m-4 max-w-sm w-full shadow-lg"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="bg-red-100 p-2 rounded-full">
+                                    <AlertTriangle className="text-red-500 w-5 h-5" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-800">Delete Mood Log</h3>
+                            </div>
+                            <p className="text-gray-600 mb-5">Are you sure you want to delete this mood log? This action cannot be undone.</p>
+                            <div className="flex justify-end gap-3">
+                                <button 
+                                    onClick={() => setConfirmDelete(null)}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={() => confirmDeleteLog(confirmDelete)}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Header */}
             <div className="flex justify-between items-center mb-5">
                 <div>
@@ -124,8 +180,7 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ duration: 0.3 }}
-                                    >
-                                        <div className="flex justify-between items-center">
+                                    >                                        <div className="flex justify-between items-center">
                                             <div>
                                                 <h4 className="font-semibold text-base text-indigo-900">{mood.mood}</h4>
                                                 <p className="text-sm text-gray-600 mt-0.5">"{mood.description}"</p>
@@ -168,9 +223,8 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                                                     <div className="flex items-center gap-2 mb-3">
                                                         <div className="h-1 w-1 rounded-full bg-indigo-400"></div>
                                                         <span className="text-indigo-800 font-medium">Tags</span>
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-2 mb-4">
-                                                        {mood.tags && mood.tags.length > 0 ? (
+                                                    </div>                                                    <div className="flex flex-wrap gap-2 mb-4">
+                                                        {Array.isArray(mood.tags) && mood.tags.length > 0 ? (
                                                             mood.tags.map((tag, idx) => (
                                                                 <span
                                                                     key={idx}
@@ -181,14 +235,11 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                                                             ))
                                                         ) : (
                                                             <span className="text-gray-500">No tags available</span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 mb-3">
+                                                        )}                                                    </div>                                                    <div className="flex items-center gap-2 mb-3">
                                                         <div className="h-1 w-1 rounded-full bg-indigo-400"></div>
                                                         <span className="text-indigo-800 font-medium">AI Insight</span>
-                                                    </div>
-                                                    <p className="text-gray-600">
-                                                        {mood.ai_insight || "AI insight is being generated. Check back soon!"}
+                                                    </div>                                                    <p className="text-gray-600">
+                                                        {mood.ai_insight ? mood.ai_insight : "AI insight is being generated. Check back soon!"}
                                                     </p>
                                                 </div>
                                             </motion.div>

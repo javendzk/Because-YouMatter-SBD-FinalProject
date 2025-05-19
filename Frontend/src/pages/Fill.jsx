@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import { useAuth } from '../context/AuthContext';
 import logService from '../services/logService';
+import telegramService from '../services/telegramService';
 
 // Mood colors matching design system
 const MOOD_COLORS = {
@@ -15,38 +16,80 @@ const MOOD_COLORS = {
 
 const Fill = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const [selectedMood, setSelectedMood] = useState('awesome');
   const [moodDescription, setMoodDescription] = useState('');
   const [animating, setAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Check if user is logged in
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [todayLog, setTodayLog] = useState(null);
+  
+  // Check if user is logged in and if we're in update mode
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
+      console.log('Fill: User not authenticated, redirecting to signin');
       navigate('/signin');
+      return;
     }
     
-    // Check if user has already logged mood today
-    const checkTodayLog = async () => {
-      try {
-        const hasLoggedToday = await logService.hasLoggedToday();
-        if (hasLoggedToday) {
-          // User has already logged mood today, redirect to dashboard
-          navigate('/dashboard');
+    // Check if we're in update mode from Dashboard
+    if (location.state && location.state.isUpdateMode) {
+      console.log('Fill: In update mode');
+      setIsUpdateMode(true);
+      
+      // Fetch today's log to pre-fill the form
+      const fetchTodayLog = async () => {
+        try {
+          const logs = await logService.getUserLogs();
+          if (logs.success && logs.data && logs.data.length > 0) {
+            const options = { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const jakartaDate = new Intl.DateTimeFormat('en-CA', options).format(new Date());
+            
+            // Find today's log
+            const todayLog = logs.data.find(log => {
+              const logDate = new Intl.DateTimeFormat('en-CA', options).format(new Date(log.date));
+              return logDate === jakartaDate;
+            });
+            
+            if (todayLog) {
+              console.log('Fill: Found today\'s log', todayLog);
+              setTodayLog(todayLog);
+              setSelectedMood(todayLog.mood || 'awesome');
+              setMoodDescription(todayLog.day_description || '');
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching today\'s log:', err);
         }
-      } catch (err) {
-        console.error('Error checking today\'s log:', err);
-      }
-    };
-    
-    checkTodayLog();
-  }, [isAuthenticated, navigate]);
+      };
+      
+      fetchTodayLog();
+    } else {
+      // Check if user has already logged mood today
+      const checkTodayLog = async () => {
+        try {
+          console.log('Fill: Checking if user has already logged mood today');
+          const hasLoggedToday = await logService.hasLoggedToday();
+          if (hasLoggedToday) {
+            console.log('Fill: User has already logged mood today, redirecting to dashboard');
+            navigate('/dashboard');
+          } else {
+            console.log('Fill: User has not logged mood today, staying on Fill page');
+          }
+        } catch (err) {
+          console.error('Error checking today\'s log:', err);
+        }
+      };
+      
+      checkTodayLog();
+    }
+  }, [isAuthenticated, navigate, location.state]);
 
   // User data for Navbar
   const userData = {
-    loggedIn: isAuthenticated(),
+    loggedIn: isAuthenticated,
     username: user?.username || '',
     profilePicture: user?.profilePicture || ''
   };
@@ -63,11 +106,15 @@ const Fill = () => {
         }, 300);
       }, 150);
     }
-  };
-
-  const handleSubmitMood = async () => {
-    if (!isAuthenticated()) {
+  };  const handleSubmitMood = async () => {
+    if (!isAuthenticated) {
+      console.log('Fill: User not authenticated, redirecting to signin');
       navigate('/signin');
+      return;
+    }
+    
+    // Prevent multiple submissions by disabling the button
+    if (isLoading) {
       return;
     }
     
@@ -78,20 +125,38 @@ const Fill = () => {
       // Submit the mood log
       const logData = {
         mood: selectedMood,
-        description: moodDescription || undefined  // Only send if user entered something
+        day_description: moodDescription || "" // Field name harus sesuai dengan yang diharapkan backend
       };
       
+      console.log('Fill: Submitting daily log with data:', logData);
       const response = await logService.createDailyLog(logData);
       
       if (response.success) {
-        // Navigate to welcoming screen with the mood data
-        navigate('/welcoming', { 
-          state: { 
-            mood: selectedMood,
-            description: moodDescription 
-          } 
-        });
+        // Send notification to Telegram with the latest mood entry
+        try {
+          console.log('Fill: Sending latest log to Telegram');
+          await telegramService.sendLatestToTelegram();
+        } catch (telegramErr) {
+          // Don't stop the flow if Telegram notification fails
+          console.error('Error sending Telegram notification:', telegramErr);
+        }
+        
+        if (isUpdateMode) {
+          // If updating, go back to dashboard
+          console.log('Fill: Daily log updated successfully, navigating back to dashboard');
+          navigate('/dashboard');
+        } else {
+          // If new entry, go to welcoming page
+          console.log('Fill: Daily log submitted successfully, navigating to welcoming page');
+          navigate('/welcoming', { 
+            state: { 
+              mood: selectedMood,
+              description: moodDescription 
+            } 
+          });
+        }
       } else {
+        console.error('Fill: Failed to submit daily log:', response.message);
         setError(response.message || 'Failed to submit mood. Please try again.');
       }
     } catch (err) {
@@ -170,8 +235,7 @@ const Fill = () => {
           onClick={handleSubmitMood}
           disabled={isLoading}
           className="w-full bg-black text-white rounded-full py-4 font-medium text-lg transition-all duration-300 hover:bg-gray-800 active:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
+        >          {isLoading ? (
             <div className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -180,7 +244,7 @@ const Fill = () => {
               <span>Submitting...</span>
             </div>
           ) : (
-            'Select mood'
+            isUpdateMode ? 'Update mood' : 'Select mood'
           )}
         </button>
       </div>

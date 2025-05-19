@@ -1,17 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-const cloudinary = require('cloudinary').v2;
 const corsConfig = require('./src/configs/cors.config');
 const pgConfig = require('./src/configs/pg.config');
 require('dotenv').config();
 
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true
-});
 
 const userRoutes = require('./src/routes/user.route');
 const logRoutes = require('./src/routes/log.route');
@@ -24,6 +16,16 @@ pgConfig.connect();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Add CORS middleware with debugging
+app.use((req, res, next) => {
+    console.log(`=== CORS Debug ===`);
+    console.log(`Request from: ${req.headers.origin || 'Unknown origin'}`);
+    console.log(`Request method: ${req.method}`);
+    console.log(`Request path: ${req.path}`);
+    next();
+});
+
 app.use(cors(corsConfig));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

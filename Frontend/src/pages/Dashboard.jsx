@@ -12,11 +12,11 @@ import rewardService from "../services/rewardService";
 
 // Mood color constants based on design
 const MOOD_COLORS = {
-    AWESOME: "#FDDD6F", // Yellow
-    GOOD: "#46CD87",    // Green
-    OKAY: "#FF8AA6",    // Pink
-    BAD: "#FF7D35",     // Orange
-    TERRIBLE: "#9FC0FF"  // Light Blue
+    awesome: "#FDDD6F", // Yellow
+    good: "#46CD87",    // Green
+    okay: "#FF8AA6",    // Pink
+    bad: "#FF7D35",     // Orange
+    terrible: "#9FC0FF"  // Light Blue
 };
 
 export default function Dashboard() {
@@ -24,6 +24,38 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuth();
     const todayMood = location.state?.mood || null;
+    
+    // Helper state for month/year selection
+    const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+    const [showProfileEdit, setShowProfileEdit] = useState(false);
+    const [editedProfile, setEditedProfile] = useState({
+        fullName: "",
+        username: "",
+        email: "",
+        birthday: "",
+        gender: "",
+        hobbies: ""
+    });
+    
+    // Helper function to convert month name to month number (0-11)
+    const getMonthNumber = (monthName) => {
+        return new Date(Date.parse(`${monthName} 1, 2000`)).getMonth();
+    };
+    
+    // Compute days in selected month
+    const daysInSelectedMonth = new Date(
+        parseInt(selectedYear),
+        getMonthNumber(selectedMonth) + 1,
+        0
+    ).getDate();
+    
+    // Compute first day of the month (0 = Sunday, 1 = Monday, etc.)
+    const firstDayOfSelectedMonth = new Date(
+        parseInt(selectedYear),
+        getMonthNumber(selectedMonth),
+        1
+    ).getDay();
     
     const [userData, setUserData] = useState({
         fullName: "",
@@ -42,37 +74,37 @@ export default function Dashboard() {
     });
 
     const [moodHistory, setMoodHistory] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);    const [error, setError] = useState(null);
     const [showCalendar, setShowCalendar] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [calendarDate, setCalendarDate] = useState(new Date());
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteLogId, setDeleteLogId] = useState(null);
+    const [selectedMood, setSelectedMood] = useState(null);
+    const [editText, setEditText] = useState('');
 
     // Prepare weekly mood data for the chart
     const weeklyMoodData = [5, 7, 4, 8, 6, 9, 7];
-    const maxMoodValue = Math.max(...weeklyMoodData);
-
-    // Check if user is authenticated
+    const maxMoodValue = Math.max(...weeklyMoodData);    // Check if user is authenticated
     useEffect(() => {
-        if (!isAuthenticated()) {
+        if (!isAuthenticated) {
+            console.log('Dashboard: User not authenticated, redirecting to signin');
             navigate('/signin');
             return;
         }
 
         fetchUserData();
         fetchMoodHistory();
-    }, [isAuthenticated, navigate]);
-
-    // Fetch user data from backend
+    }, [isAuthenticated, navigate]);// Fetch user data from backend
     const fetchUserData = async () => {
         try {
+            console.log('=== FETCHING USER DATA ===');
             setIsLoading(true);
             
             // Set basic user data from auth context
             if (user) {
+                console.log('User data from auth context:', user);
                 // Calculate age from birthday if available
                 let age = "";
                 if (user.birthday) {
@@ -96,13 +128,17 @@ export default function Dashboard() {
                     gender: user.gender || "",
                     interest: user.interest || "",
                     age: age.toString(),
-                    profilePicture: user.profileImage || "/src/assets/placeholder.jpg"
+                    profilePicture: user.user_image_url || "/src/assets/placeholder.jpg"
                 }));
             }
             
             // Get streak information
+            console.log('Fetching streak information...');
             const streakResponse = await rewardService.getUserStreak();
+            console.log('Streak response:', streakResponse);
+            
             if (streakResponse.success) {
+                console.log('Setting streak days:', streakResponse.data.currentStreak);
                 setUserData(prev => ({
                     ...prev,
                     streakDays: streakResponse.data.currentStreak || 0
@@ -110,16 +146,26 @@ export default function Dashboard() {
             }
             
             // Get mood statistics
+            console.log('Fetching mood statistics...');
             const statsResponse = await logService.calculateUserStats();
+            console.log('Stats response:', statsResponse);
+            
             setUserData(prev => ({
                 ...prev,
-                totalDays: statsResponse.totalDays || 0,
-                goodDays: statsResponse.goodDays || 0,
-                stressedDays: statsResponse.stressedDays || 0
+                totalDays: statsResponse.data?.totalDays || 0,
+                goodDays: statsResponse.data?.goodDays || 0,
+                stressedDays: statsResponse.data?.stressedDays || 0
             }));
+            
+            console.log('User data updated:', userData);
             
         } catch (err) {
             console.error("Error fetching user data:", err);
+            console.error("Error details:", {
+                name: err.name,
+                message: err.message,
+                stack: err.stack
+            });
             setError("Failed to load user data. Please try again.");
         } finally {
             setIsLoading(false);
@@ -142,35 +188,36 @@ export default function Dashboard() {
                     const day = date.getDate();
                     const month = months[date.getMonth()].substring(0, 3);
                     const weekday = weekdays[date.getDay()];
-                    
-                    // Format mood
+                      // Format mood
                     const moodFormatted = log.mood.charAt(0).toUpperCase() + log.mood.slice(1);
                     
                     // Check if the log date is today
                     const today = new Date();
                     const isToday = date.toDateString() === today.toDateString();
-                    
-                    // Generate tags from AI feedback if available
-                    const tags = log.ai_analysis ? 
-                        log.ai_analysis.tags || ["mood"] : 
-                        ["mood"];
-                    
-                    return {
+                      // Extract tags directly from the log
+                    console.log("Log data:", log);
+                      // Extract tags and insights properly
+                    const tags = log.tags || [];
+                    // Debugging
+                    console.log(`Log ${log.log_id} tags:`, tags);
+                    console.log(`Log ${log.log_id} insight:`, log.insight);
+                    console.log(`Log ${log.log_id} llm_response:`, log.llm_response);
+                      return {
                         id: log.log_id,
                         day,
                         month,
                         weekday,
-                        mood: moodFormatted,
-                        color: MOOD_COLORS[moodFormatted.toUpperCase()],
-                        imageSrc: `/src/assets/emotions/${moodFormatted}.png`,
-                        description: log.description || "No description provided.",
-                        tags,
-                        ai_insight: log.ai_analysis?.sentiment_analysis || "AI analysis not available yet.",
-                        isToday
+                        mood: moodFormatted,color: MOOD_COLORS[log.mood] || "#46CD87", // Default to green if mood color not found
+                        imageSrc: `/src/assets/emotions/${moodFormatted}.png`,                        description: log.day_description || "No description provided.",
+                        tags: Array.isArray(tags) ? tags : [], 
+                        ai_insight: log.insight || "AI insight not available yet.",
+                        web_message: log.llm_response?.webMessage || "AI is analyzing your mood pattern. Check back soon for insights!",
+                        isToday,
+                        date: log.date // Include date for calendar functionality
                     };
                 });
-                
-                setMoodHistory(formattedLogs);
+                  setMoodHistory(formattedLogs);
+                console.log("Formatted mood history logs:", formattedLogs);
             }
         } catch (err) {
             console.error("Error fetching mood history:", err);
@@ -211,11 +258,106 @@ export default function Dashboard() {
         }
     }, [todayMood]);
     
-    // Function to handle updating mood
+    // Function to handle updating mood    
     const handleUpdateMood = () => {
-        navigate('/fill');
+        // Navigate to Fill page with query parameter to indicate update mode
+        navigate('/fill', { state: { isUpdateMode: true } });
     };
 
+    // Add a handler for saving edited mood
+    const handleSaveEdit = async () => {
+        if (!selectedMood || !selectedMood.logId) {
+            console.error("Cannot save edit: No selected mood or log ID");
+            setSelectedMood(null);
+            return;
+        }
+        
+        try {
+            console.log(`Updating log with ID ${selectedMood.logId}`);
+            // You would typically call your API here to update the log
+            // const response = await logService.updateLog(selectedMood.logId, { description: editText });
+            
+            // For now, just close the modal and refresh data
+            setSelectedMood(null);
+            setEditText('');
+            fetchMoodHistory();
+        } catch (error) {
+            console.error("Error updating mood:", error);
+            setError("Failed to update mood. Please try again.");
+        }
+    };
+    
+    // Add handler for calendar day clicks
+    const handleCalendarClick = (day) => {
+        // Find the mood for the selected day, if any
+        const selectedDate = new Date(selectedYear, getMonthNumber(selectedMonth), day);
+        const formattedDate = selectedDate.toISOString().split('T')[0];
+        
+        // Find if there's a log for this date
+        const moodForDay = moodHistory.find(mood => {
+            return new Date(mood.date).toISOString().split('T')[0] === formattedDate;
+        });
+        
+        if (moodForDay) {
+            setSelectedMood({
+                day,
+                date: selectedDate,
+                mood: moodForDay.mood,
+                description: moodForDay.description,
+                logId: moodForDay.id
+            });
+            setEditText(moodForDay.description);
+        } else {
+            console.log(`No mood logged for ${formattedDate}`);
+        }
+    };
+
+    // Handle profile save
+    const handleProfileSave = async () => {
+        try {
+            setIsLoading(true);
+            console.log('Saving profile data:', editedProfile);
+            
+            // Prepare data for API
+            const profileData = {
+                fullname: editedProfile.fullName,
+                username: editedProfile.username,
+                email: editedProfile.email,
+                birthday: editedProfile.birthday,
+                gender: editedProfile.gender,
+                interest: editedProfile.hobbies
+            };
+            
+            // Call API to update profile
+            const { updateProfile } = useAuth();
+            const result = await updateProfile(profileData);
+            
+            if (result.success) {
+                console.log('Profile updated successfully');
+                // Update local state
+                setUserData(prev => ({
+                    ...prev,
+                    fullName: editedProfile.fullName,
+                    username: editedProfile.username,
+                    email: editedProfile.email,
+                    birthday: editedProfile.birthday,
+                    gender: editedProfile.gender,
+                    interest: editedProfile.hobbies
+                }));
+                
+                // Close modal
+                setShowProfileEdit(false);
+            } else {
+                setError('Failed to update profile: ' + result.message);
+            }
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            setError('An unexpected error occurred while updating your profile');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
     // Page transitions
     const pageVariants = {
         initial: {
@@ -231,8 +373,7 @@ export default function Dashboard() {
         },
         exit: {
             opacity: 0,
-            y: -20,
-            transition: {
+            y: -20,            transition: {
                 duration: 0.3
             }
         }
@@ -249,6 +390,62 @@ export default function Dashboard() {
             </div>
         );
     }
+
+    // Dummy data for today's mood preview section if needed
+    const day = new Date().getDate();
+    const currentDate = new Date();
+    const formatDate = (date) => {
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+      // Get today's mood from mood history if available
+    const getTodaysMood = () => {
+        const today = new Date().toDateString();
+        const todayEntry = moodHistory.find(entry => new Date(entry.date).toDateString() === today);
+        
+        if (todayEntry) {
+            return {
+                mood: todayEntry.mood,
+                color: todayEntry.color,
+                imageSrc: todayEntry.imageSrc,
+                description: todayEntry.description,
+                web_message: todayEntry.web_message
+            };
+        }
+        
+        // Default mood if no entry for today
+        return {
+            mood: todayMood || 'good',
+            color: todayMood ? MOOD_COLORS[todayMood] : MOOD_COLORS.good,
+            imageSrc: todayMood 
+                ? `/src/assets/emotions/${todayMood.charAt(0).toUpperCase() + todayMood.slice(1)}.png` 
+                : '/src/assets/emotions/Good.png',
+            description: 'No mood logged for today yet. How are you feeling?',
+            web_message: "Log your mood to get AI suggestions!"
+        };
+    };
+      // Get the current mood
+    const currentMood = getTodaysMood();
+
+    // Helper function for web messages
+    const getWebMessageForMood = (mood) => {
+        if (mood === 'awesome') {
+            return "Keep up the positive energy! Your excellent mood is a great foundation for your day.";
+        } else if (mood === 'good') {
+            return "You're doing well today. Remember to appreciate these good moments.";
+        } else if (mood === 'okay') {
+            return "It's okay to have average days. Take some time for self-care.";
+        } else if (mood === 'bad') {
+            return "Sorry to hear you're feeling down. Consider talking to someone you trust about your feelings.";
+        } else if (mood === 'terrible') {
+            return "I'm here for you during these difficult moments. Consider reaching out for support.";
+        } else {
+            return "I'm here to support you on your mental health journey.";
+        }
+    };
 
     return (
         <motion.div
@@ -708,29 +905,28 @@ export default function Dashboard() {
                 <main className="max-w-6xl mx-auto py-10 px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column */}
                     <section className="space-y-6">
-                        {/* Mood Today Card */}                    <div className="bg-white rounded-3xl shadow-md p-6 text-center">
-                            <h2 className="text-3xl font-bold text-indigo-900 mb-1">Day {day}!</h2>
-                            <p className="text-sm text-gray-500 mb-4">May 2025</p>                            <motion.div
+                        {/* Mood Today Card */}                    <div className="bg-white rounded-3xl shadow-md p-6 text-center">                            <h2 className="text-3xl font-bold text-indigo-900 mb-1">Day {day}!</h2>
+                            <p className="text-sm text-gray-500 mb-4">May 2025</p><motion.div
                                 className="mx-auto w-40 h-40 rounded-full overflow-hidden"
                                 style={{ backgroundColor: currentMood.color }}
                                 whileHover={{ scale: 1.05 }}
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={{ duration: 0.5 }}
-                            >
-                                <div className="w-full h-full flex items-center justify-center">
+                            >                                <div className="w-full h-full flex items-center justify-center">
                                     <img
                                         src={currentMood.imageSrc}
                                         alt={currentMood.mood}
                                         className="w-28 h-28 object-contain"
+                                        onError={(e) => {
+                                            e.target.src = "/src/assets/placeholder.jpg";
+                                        }}
                                     />
                                 </div>
-                            </motion.div>
-                            <p className="mt-3 text-sm text-gray-500">{formatDate(currentDate)}, 09:00 AM</p>
+                            </motion.div>                            <p className="mt-3 text-sm text-gray-500">{formatDate(currentDate)}</p>
                             <p className="mt-4 text-gray-700 text-sm italic">"{currentMood.description}"</p>
-                            <p className="mt-2 text-sm font-semibold text-indigo-900">Keep going, {userData.username} 💪</p>
                             <div className="mt-4 p-3 bg-[#F5F9FF] rounded-xl border border-[#CEDEFF] text-sm">
-                                💡 AI Suggestion: Try journaling tonight about your time with friends. Gratitude boosts your mood!
+                                {currentMood.web_message}
                             </div>
                             
                             {/* Add button to update today's mood */}
@@ -765,7 +961,7 @@ export default function Dashboard() {
                                         <span className="text-gray-400">•</span>
                                         <p className="capitalize">{userData.gender}</p>
                                     </div>
-                                    <p className="text-xs text-gray-500">Born on {userData.birthday}</p>
+                                    <p className="text-xs text-gray-500">Born on {userData.birthday ? new Date(userData.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</p>
                                 </div>
                             </div>
 
@@ -824,20 +1020,25 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-6 py-2 bg-yellow-50 rounded-full px-4">
-                                <p className="text-sm text-amber-800 font-medium">
-                                    🎉 Congratulations on your weekly streak!
-                                </p>
-                            </div>                        </div>                    </section>                    {/* Right Column */}
+                                <div className="mt-6 py-2 bg-yellow-50 rounded-full px-4">
+                                    <p className="text-sm text-amber-800 font-medium">
+                                        🎉 Congratulations on your weekly streak!
+                                    </p>
+                                </div>                        
+                            </div>                    
+                        </section>                    {/* Right Column */}
                     <section className="lg:col-span-2 space-y-6">
-                        {/* Mood History Section */}
-                        <MoodHistoryTimeline
+                        {/* Mood History Section */}                        <MoodHistoryTimeline
                             moodHistoryData={moodHistory}
                             onCalendarOpen={() => setShowCalendar(true)}
+                            onDeleteLog={handleDeleteLog}
+                            isDeleting={isDeleting}
+                            deleteLogId={deleteLogId}
                         />
 
                         {/* Weekly Mood Tracker */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                        <div className="bg-white rounded-3xl shadow-md p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                        
+                            <div className="bg-white rounded-3xl shadow-md p-6">
                             <h4 className="text-center text-indigo-900 font-semibold mb-4">Your Mood Dashboard</h4>
                             <div className="flex justify-around text-center mb-4">
                                 <motion.div
@@ -877,17 +1078,6 @@ export default function Dashboard() {
                             </div>
                             <p className="text-xs text-center text-gray-500 mt-4">Weekly Mood Overview</p>
                         </div>
-                            <div className="bg-white rounded-3xl shadow-md p-6">
-                                <h4 className="text-center text-indigo-900 font-semibold mb-4">Mood Insights</h4>
-                                <div className="space-y-3">                                <div className="text-xs text-gray-600 p-4 bg-[#F5F9FF] rounded-2xl">                                    <p className="font-semibold">✨ Weekly Highlights <span className="text-gray-400 text-xs font-normal">(May 2025)</span></p>
-                                    <p className="mt-1">Your best day was <span className="font-medium text-indigo-900">Sunday</span> with a peak mood score of 9!</p>
-                                </div>
-                                    <div className="text-xs text-gray-600 p-4 bg-[#F5F9FF] rounded-2xl">
-                                        <p className="font-semibold">🔮 Mood Prediction</p>
-                                        <p className="mt-1">Based on your pattern, tomorrow might be a <span className="font-medium text-green-500">good day</span>!</p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </section>
                 </main>
@@ -895,8 +1085,7 @@ export default function Dashboard() {
 
             <footer className="bg-indigo-900 text-white py-6 text-center text-sm">
                 <p>YouMatter — Taking care of your mental health</p>
-                <p className="text-indigo-300">&copy; {new Date().getFullYear()} YouMatter. All rights reserved.</p>
-            </footer>
+                <p className="text-indigo-300">&copy; {new Date().getFullYear()} YouMatter. All rights reserved.</p>            </footer>
         </motion.div>
     );
 }

@@ -30,12 +30,19 @@ exports.validateUserRegistration = (req, res, next) => {
 
 
 exports.validateUserLogin = (req, res, next) => {
+    console.log('=== VALIDATOR: Validating login request ===');
+    console.log('Request body:', req.body);
+    
     const { email, password } = req.body;
     
     if (!email || !password) {
+        console.log('VALIDATOR ERROR: Email or password missing');
+        console.log('Email provided:', !!email);
+        console.log('Password provided:', !!password);
         return baseResponse(res, false, 400, 'Email and password are required', null);
     }
     
+    console.log('VALIDATOR: Login validation passed');
     next();
 };
 

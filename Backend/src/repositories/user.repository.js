@@ -15,13 +15,16 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
+        
+        // Default profile picture URL
+        const defaultProfilePicture = 'https://i.imgur.com/zZz0JKY.jpeg';
 
         const result = await db.query(
             `INSERT INTO users 
-            (username, password, email, telegram_id, interest, gender, fullname, birthday, last_login) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP) 
-            RETURNING user_id, username, email, telegram_id, interest, gender, fullname, birthday, last_login, streak_counter`,
-            [username, hashedPassword, email, telegram_id || null, interest || null, gender || null, fullname || null, birthday || null]
+            (username, password, email, telegram_id, interest, gender, fullname, birthday, last_login, user_image_url) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, $9) 
+            RETURNING user_id, username, email, telegram_id, interest, gender, fullname, birthday, last_login, streak_counter, user_image_url`,
+            [username, hashedPassword, email, telegram_id || null, interest || null, gender || null, fullname || null, birthday || null, defaultProfilePicture]
         );
 
         return result.rows[0];
@@ -34,32 +37,43 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
 
 exports.loginUser = async ({ email, password }) => {
     try {
+        console.log('Repository: Attempting to find user with email:', email);
+        
         const result = await db.query(
             'SELECT * FROM users WHERE email = $1',
             [email]
         );
 
+        console.log('Repository: Query result rows count:', result.rows.length);
+
         if (result.rows.length === 0) {
+            console.log('Repository: No user found with email:', email);
             return { success: false, message: 'Invalid email or password' };
         }
 
         const user = result.rows[0];
+        console.log('Repository: User found, checking password');
+        
         const isPasswordValid = await bcrypt.compare(password, user.password);
+        console.log('Repository: Password validation result:', isPasswordValid);
        
         if (!isPasswordValid) {
+            console.log('Repository: Invalid password for user:', email);
             return { success: false, message: 'Invalid email or password' };
         }
         
+        console.log('Repository: Updating last login for user:', user.user_id);
         await db.query(
             'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1',
             [user.user_id]
         );
-        
-        delete user.password;
+          delete user.password;
+        console.log('Repository: Login successful for user:', user.user_id);
 
         return { success: true, user };
     } catch (error) {
-        console.error('Error in loginUser repository:', error);
+        console.error('Repository ERROR in loginUser:', error);
+        console.error('Repository ERROR stack:', error.stack);
         throw error;
     }
 };

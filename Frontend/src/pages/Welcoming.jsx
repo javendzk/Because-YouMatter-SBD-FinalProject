@@ -5,6 +5,7 @@ import '../assets/styles/welcomingAnimation.css';
 import '../assets/styles/flameAnimation.css';
 import { useAuth } from '../context/AuthContext';
 import logService from '../services/logService';
+import userService from '../services/userService';
 
 // Mood color constants based on design (matching Dashboard)
 const MOOD_COLORS = {
@@ -35,28 +36,47 @@ const Welcoming = () => {
     const mood = location.state?.mood || 'good';
     const moodDescription = location.state?.description || '';
     const moodColor = MOOD_COLORS[mood] || MOOD_COLORS.good;
-    const moodMessage = MOOD_MESSAGES[mood] || MOOD_MESSAGES.good;
-
+    const moodMessage = MOOD_MESSAGES[mood] || MOOD_MESSAGES.good;    // Load user data and check redirection logic
     useEffect(() => {
         const checkUserStatus = async () => {
-            if (!isAuthenticated()) {
+            if (!isAuthenticated) {
                 // Not logged in, redirect to sign in
+                console.log('Welcoming: User not authenticated, redirecting to signin');
                 navigate('/signin');
                 return;
             }
 
-            try {
-                // Check if user has any logs (to determine if new user)
-                const response = await logService.getUserLogs();
+            try {                // Debug: Get and log user profile data
+                console.log('Welcoming: Getting user profile for debugging');
+                const userProfile = await userService.getProfile();
+                console.log('Welcoming: User profile data:', userProfile.data);
                 
-                if (response.success) {
-                    // If user has no logs yet, they're considered new
-                    setIsNewUser(response.data.length === 0);
-                    
-                    // If we have mood data, submit the log
-                    if (location.state?.mood) {
-                        await submitMoodLog();
-                    }
+                // First check if user has already logged mood today
+                console.log('Welcoming: Checking if user already logged mood today');
+                const hasLoggedToday = await logService.hasLoggedToday();
+                console.log('Welcoming: Has logged today?', hasLoggedToday);
+                
+                // We'll handle redirect in the animation completion useEffect
+                // instead of redirecting directly here
+                
+                // If user hasn't logged today, check if they're a first-time user
+                const isFirstTime = await userService.isFirstTimeUser();
+                console.log('Welcoming: Is first time user?', isFirstTime);
+                
+                // Double-check with log data - if user has logs, they're not new
+                console.log('Welcoming: Double-checking with log history');
+                const logsResponse = await logService.getUserLogs();
+                if (logsResponse.success && logsResponse.data.length > 0) {
+                    console.log('Welcoming: User has logs, considering as existing user');
+                    setIsNewUser(false);
+                } else {
+                    console.log('Welcoming: User has no logs or fetching logs failed');
+                    setIsNewUser(isFirstTime);
+                }
+                
+                // If we have mood data, submit the log
+                if (location.state?.mood) {
+                    await submitMoodLog();
                 }
             } catch (error) {
                 console.error('Error checking user status:', error);
@@ -64,32 +84,55 @@ const Welcoming = () => {
                 setIsLoading(false);
             }
         };
-        
-        const submitMoodLog = async () => {
+          const submitMoodLog = async () => {
             try {
                 // Submit the mood log to the backend
+                console.log('Welcoming: Submitting mood log');
                 await logService.createDailyLog({
                     mood: mood,
-                    description: moodDescription
+                    day_description: moodDescription || "" // Gunakan nama field yang benar
                 });
+                console.log('Welcoming: Mood log submitted successfully');
             } catch (error) {
                 console.error('Error submitting mood log:', error);
             }
         };
 
         checkUserStatus();
-    }, [navigate, isAuthenticated, mood, moodDescription, location.state]);
-
-    // Simulate loading process
+    }, [navigate, isAuthenticated, mood, moodDescription, location.state]);    // Simulate loading process
     useEffect(() => {
         if (isLoading) return;
         
-        const timer = setTimeout(() => {
-            // If new user, navigate to tutorial, otherwise to dashboard
+        console.log('Welcoming: Animation finished, preparing to navigate');
+        console.log('Welcoming: Is new user?', isNewUser);
+        
+        const timer = setTimeout(async () => {
+            // If new user, navigate to tutorial
             if (isNewUser) {
+                console.log('Welcoming: Redirecting to tutorial (new user)');
                 navigate('/tutorial', { state: { mood } });
             } else {
-                navigate('/dashboard', { state: { mood } });
+                // For existing users, check if they've logged today
+                try {
+                    console.log('Welcoming: Checking if existing user has logged today');
+                    const hasLoggedToday = await logService.hasLoggedToday();
+                    console.log('Welcoming: Existing user has logged today?', hasLoggedToday);
+                    
+                    if (hasLoggedToday) {
+                        // If already logged today, go to dashboard
+                        console.log('Welcoming: Existing user has logged today, redirecting to dashboard');
+                        navigate('/dashboard', { state: { mood } });
+                    } else {
+                        // If not logged today, go to fill mood page
+                        console.log('Welcoming: Existing user has NOT logged today, redirecting to fill mood page');
+                        navigate('/fill');
+                    }
+                } catch (error) {
+                    console.error('Error checking if user has logged today:', error);
+                    // Default to fill page if there's an error
+                    console.log('Welcoming: Error checking logs, redirecting to fill as fallback');
+                    navigate('/fill');
+                }
             }
         }, 4000);
 

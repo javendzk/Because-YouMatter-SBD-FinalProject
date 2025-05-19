@@ -37,7 +37,7 @@ exports.sendTelegramFeedback = async (req, res) => {
             telegramMessage = 'Keep up the good work!';
         }        
 
-        const finalMessage = `Hi ${req.user.username}! 🌟\n\n${telegramMessage}\n\nYour MindFlow Assistant`;
+        const finalMessage = `Hi ${req.user.username}! 🌟\n\n${telegramMessage}\n\nYumi, Your YouMatter Assistant`;
         
         await telegramService.sendTelegramMessage(telegramId, finalMessage);
         
@@ -77,7 +77,7 @@ exports.sendLatestFeedback = async (req, res) => {
             telegramMessage = 'Keep up the good work!';
         }
 
-        const finalMessage = `Hi ${req.user.username}! 🌟\n\n${telegramMessage}\n\nYour MindFlow Assistant`;
+        const finalMessage = `Hi ${req.user.username}! 🌟\n\n${telegramMessage}\n\nYumi, Your YouMatter Assistant`;
         await telegramService.sendTelegramMessage(telegramId, finalMessage);
         await telegramRepository.createTelegramLog({
             userId,

@@ -10,6 +10,8 @@
   <img src="https://imgur.com/zTwZQ51.png" alt="React" width="40" />
   <img src="https://imgur.com/3WJSmRJ.png" alt="Tailwind" width="40" />
   <img src="https://imgur.com/eAQIJAd.png" alt="Express" width="40" />
+  <img src="https://imgur.com/bgDPExG.png" alt="CSS" width="40" />
+  <img src="https://imgur.com/cOYiBMH.png" alt="HTML" width="40" />
 </p>
 
 

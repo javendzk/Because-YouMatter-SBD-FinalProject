@@ -1,4 +1,4 @@
-# YouMatter - Mood Tracker Platform 
+# YouMatter - SBD 7 Final Project 
 ![banner](https://imgur.com/4pP1iWc.png)
 ![lisence](https://img.shields.io/badge/License-MIT-blue) ![](https://img.shields.io/badge/%20Version-v1.0.0-blue) ![](https://img.shields.io/badge/build-passed-green)
 ---

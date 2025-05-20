@@ -43,7 +43,7 @@ exports.generateFeedback = async (dayDescription, mood) => {
             
             Based on the above information, provide the following:
             1. A personalized, empathetic response that validates their feelings and shows understanding.
-            2. Suggest 2-3 practical coping strategies or self-care activities that might help improve their day.
+            2. Suggest 2-3 practical coping strategies or self-care activities that might help improve their day. do not use numbering! ONLY WRITE IN PARAGRAGH FORM. dont make it too long aswell.
             3. A supportive, encouraging message as if you're their caring friend who wants to help them feel better.
             4. Generate 3 specific tags that represent themes or topics from their day description.
             5. Generate a brief insight about how their mood is influenced by factors in their day and what they might learn from this.

@@ -75,10 +75,9 @@ const Tutorial = () => {
       title: "Step 4: Save your mood",
       content: "Click the 'Select mood' button to save your entry.",
       highlightElement: ".mood-button"
-    },
-    {
+    },    {
       title: "You're all set!",
-      content: "Now you know how to track your mood. Let's go to your dashboard!",
+      content: "Now you know how to track your mood. Let's record your first mood entry!",
       highlightElement: null
     }
   ];
@@ -128,8 +127,7 @@ const Tutorial = () => {
       setShowHighlight(false);
     }
   }, [currentStep]);
-  
-  // Handle next step button
+    // Handle next step button
   const nextStep = () => {
     if (currentStep < tutorialSteps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -138,15 +136,15 @@ const Tutorial = () => {
       setTutorialComplete(true);
       setFadeOut(true);
       setTimeout(() => {
-        // Navigate to welcoming page
+        // Navigate to Fill page
         navigateToWelcoming();
       }, 1500);
     }
-  };
-    // Function to navigate to welcoming page
+  };// Function to navigate after tutorial
   const navigateToWelcoming = () => {
-    // Instead of going through welcoming again, go straight to dashboard
-    navigate('/dashboard', { 
+    // Always redirect to Fill page from tutorial for new users to log their first mood
+    console.log('Tutorial: Redirecting to Fill page after tutorial completion');
+    navigate('/fill', { 
       state: { 
         mood: selectedMood,
         description: moodDescription,
@@ -289,8 +287,7 @@ const Tutorial = () => {
           />
         </div>
         
-        {/* Submit button - now always navigates to welcoming page */}
-        <div 
+        {/* Submit button - now always navigates to welcoming page */}        <div 
           className="w-full"
           style={getHighlightStyle('.mood-button')}
         >
@@ -300,7 +297,7 @@ const Tutorial = () => {
             className={`mood-button w-full bg-black text-white rounded-full py-4 font-medium text-lg transition-all duration-300 
               ${currentStep === 4 ? 'animate-pulse' : ''} 
               hover:bg-gray-800 active:bg-gray-900`}          >
-            Go to Dashboard
+            Track Your First Mood
           </button>
         </div>
       </div>

@@ -42,7 +42,7 @@ As a platform in the healthcare sector, YouMatter is dedicated to supporting men
 
 <table align="center">
   <tr>
-    <td align="center"><b>Javana Muhammad D.</b><br><i>Lead Engineer, PM</i></td>
+    <td align="center"><b>Javana Muhammad D.</b><br><i>Lead Fullstack Engineer, PM, System Integrator</i></td>
     <td align="center"><b>M. Hilmy Mahardika</b><br><i>Backend Engineer</i></td>
     <td align="center"><b>Laura Fawzia Sambowo</b><br><i>Frontend Engineer, Design</i></td>
     <td align="center"><b>Zhafira Zahra Alfarisy</b><br><i>Frontend Engineer, Design</i></td>

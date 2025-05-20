@@ -35,3 +35,22 @@ exports.getUserTelegramId = async (userId) => {
         throw error;
     }
 };
+
+
+exports.hasStreakRewardBeenSent = async (userId, streakValue) => {
+    try {
+        // Search for messages containing streak milestone notification for this specific streak
+        const result = await db.query(
+            `SELECT * FROM telegram_logs 
+            WHERE user_id = $1 
+            AND message_content LIKE $2
+            LIMIT 1`,
+            [userId, `%${streakValue}-day streak milestone%`]
+        );
+        
+        return result.rows.length > 0;
+    } catch (error) {
+        console.error('Error in hasStreakRewardBeenSent repository:', error);
+        throw error;
+    }
+};

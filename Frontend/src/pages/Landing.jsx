@@ -373,7 +373,7 @@ const Landing = () => {
       <Navbar userData={userData} />
 
       {/* Content Area */}
-      <main className="py-2 px-2 sm:py-4 sm:px-4 pt-20 flex-grow pb-24" ref={sliderRef}>
+      <main className="py-2 px-2 sm:py-4 sm:px-4 pt-20 flex-grow pb-8" ref={sliderRef}>
         {/* Device Frame */}
         <div className="max-w-4xl mx-auto">
           {/* Laptop Mockup Frame */}
@@ -448,11 +448,10 @@ const Landing = () => {
                 />
               ))}
             </motion.div>
-            
-            {/* Action Buttons */}
-            <div className="flex justify-between items-center">
+              {/* Action Buttons */}
+            <div className="flex justify-center items-center gap-4 sm:gap-6">
               {/* Back button (only shown after first slide) */}
-              {currentSlide > 0 ? (
+              {currentSlide > 0 && (
                 <motion.button
                   className="text-sm sm:text-base text-indigo-800 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-50 touch-target"
                   whileHover={{ scale: 1.05 }}
@@ -465,41 +464,36 @@ const Landing = () => {
                 >
                   Back
                 </motion.button>
-              ) : (
-                <div></div> // Empty div to maintain layout
               )}
 
-              <div className="flex gap-2 sm:gap-3">
-                {/* Only show Skip button if not on final slide */}
-                {!slides[currentSlide].finalSlide && (
-                  <motion.button
-                    className="text-sm sm:text-base text-gray-500 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-gray-100 touch-target"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleSkip}
-                    style={{ minHeight: 44 }}
-                  >
-                    Skip
-                  </motion.button>
-                )}
-                
-                {/* Show either Continue or Sign In button based on slide */}
+              {/* Only show Skip button if not on final slide */}
+              {!slides[currentSlide].finalSlide && (
                 <motion.button
-                  className="text-sm sm:text-base bg-indigo-900 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-800 touch-target min-h-[44px]"
+                  className="text-sm sm:text-base text-gray-500 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-gray-100 touch-target"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={slides[currentSlide].finalSlide ? handleSignIn : handleContinue}
+                  onClick={handleSkip}
                   style={{ minHeight: 44 }}
                 >
-                  {slides[currentSlide].finalSlide ? 'Sign In' : 'Continue'}
+                  Skip
                 </motion.button>
-              </div>
+              )}
+              
+              {/* Show either Continue or Sign In button based on slide */}
+              <motion.button
+                className="text-sm sm:text-base bg-indigo-900 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-800 touch-target min-h-[44px]"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={slides[currentSlide].finalSlide ? handleSignIn : handleContinue}
+                style={{ minHeight: 44 }}
+              >
+                {slides[currentSlide].finalSlide ? 'Sign In' : 'Continue'}
+              </motion.button>
             </div>
           </div>
-        </div>
-      </main>
-      {/* Fixed footer at the bottom */}
-      <footer className="bg-indigo-900 text-white py-6 text-center text-sm fixed bottom-0 left-0 w-full">
+        </div>      </main>
+      {/* Footer at the bottom */}
+      <footer className="bg-indigo-900 text-white py-6 text-center text-sm w-full mt-auto">
         <p>YouMatter — Taking care of your mental health</p>
         <p className="text-indigo-300">&copy; {new Date().getFullYear()} YouMatter. All rights reserved.</p>
       </footer>

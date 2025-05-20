@@ -96,18 +96,12 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                 <div>
                     <h3 className="text-xl font-bold text-indigo-800">Mood History</h3>
                     <p className="text-sm text-gray-500 mt-1">Track your journeys</p>
-                </div>
-                <div className="flex gap-3">          
+                </div>                <div className="flex gap-3">          
                     <button
                         onClick={onCalendarOpen}
                         className="flex items-center text-sm text-indigo-600 border border-blue-100 px-4 py-1.5 rounded-full"
                     >
                         <Calendar size={16} className="mr-1.5" /> Calendar
-                    </button>
-                    <button
-                        className="flex items-center text-sm text-indigo-600 bg-blue-50 px-4 py-1.5 rounded-full"
-                    >
-                        <Filter size={16} className="mr-1.5" /> Filter
                     </button>
                 </div>
             </div>

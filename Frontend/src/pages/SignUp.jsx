@@ -92,9 +92,7 @@ const SignUp = () => {
         }
         
         setIsLoading(true);
-        
-        try {
-            // Prepare user data for registration
+          try {            // Prepare user data for registration
             const userData = {
                 username,
                 password,
@@ -103,17 +101,28 @@ const SignUp = () => {
                 birthday,
                 gender: gender || undefined,
                 interest: interest || undefined,
-                telegram_id: telegramId ? parseInt(telegramId) : undefined
+                telegram_id: telegramId ? (isNaN(Number(telegramId)) ? undefined : Number(telegramId)) : undefined
             };
             
-            // Call the register function from our auth context
+            console.log('Signup: Sending user data for registration:', {
+                ...userData,
+                password: '******' // Mask password for security
+            });
+              // Call the register function from our auth context
             const result = await register(userData);
             
             if (result.success) {
-                // Registration successful, navigate to login page
-                navigate('/signin', { 
-                    state: { message: 'Account created successfully. Please log in.' } 
-                });
+                if (result.autoLoginSuccess) {
+                    // Auto-login was successful, redirect to tutorial page
+                    console.log('SignUp: Registration and auto-login successful, redirecting to tutorial');
+                    navigate('/tutorial');
+                } else {
+                    // Auto-login failed, redirect to sign in with message
+                    console.log('SignUp: Registration successful but auto-login failed, redirecting to signin');
+                    navigate('/signin', { 
+                        state: { message: 'Account created successfully. Please log in.' } 
+                    });
+                }
             } else {
                 // Display error message
                 setGeneralError(result.message || 'Registration failed. Please try again.');
@@ -285,8 +294,7 @@ const SignUp = () => {
                                 <option value="">Select Gender</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
-                                <option value="non-binary">Non-binary</option>
-                                <option value="prefer-not-to-say">Prefer not to say</option>
+                                <option value="others">Others</option>
                             </select>
                         </motion.div>
                     </div>

@@ -219,6 +219,14 @@ const Welcoming = () => {
                     <span className="loading-dot dot-3"></span>
                 </div>
             </motion.div>
+
+            <div style={{ width: 0, height: 0, overflow: 'hidden', position: 'absolute' }}>
+              <img src={AwesomeImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+              <img src={GoodImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+              <img src={OkayImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+              <img src={BadImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+              <img src={TerribleImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+            </div>
         </div>
     );
 };

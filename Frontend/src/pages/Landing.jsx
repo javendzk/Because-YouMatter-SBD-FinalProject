@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "./Navbar";
 import LogoImg from '../assets/logo.png';
+import AwesomeImg from '../assets/emotions/Awesome.png';
+import GoodImg from '../assets/emotions/Good.png';
+import OkayImg from '../assets/emotions/Okay.png';
+import BadImg from '../assets/emotions/Bad.png';
+import TerribleImg from '../assets/emotions/Terrible.png';
+import EmotionsImg from '../assets/emotions.png';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -11,12 +17,6 @@ const Landing = () => {
   const [mood, setMood] = useState("Awesome");
   const sliderRef = useRef(null);
 
-  const mockImages = {
-    logo: "/src/assets/logo.png",
-    macbook: "/api/placeholder/800/500",
-    moodImage: "/api/placeholder/300/300",
-    emotionsImage: "/api/placeholder/400/320"
-  };
   const userData = {
     loggedIn: false
   };
@@ -466,6 +466,15 @@ const Landing = () => {
         <p>YouMatter — Taking care of your mental health</p>
         <p className="text-indigo-300">&copy; {new Date().getFullYear()} YouMatter. All rights reserved.</p>
       </footer>
+      {/* Preload all important images, invisible */}
+      <div style={{ width: 0, height: 0, overflow: 'hidden', position: 'absolute' }}>
+        <img src={AwesomeImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={GoodImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={OkayImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={BadImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={TerribleImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={EmotionsImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+      </div>
     </motion.div>
   );
 };

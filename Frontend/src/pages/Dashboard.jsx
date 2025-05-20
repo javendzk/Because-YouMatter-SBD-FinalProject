@@ -1114,6 +1114,14 @@ export default function Dashboard() {
                 </main>
             </div>
 
+      <div style={{ width: 0, height: 0, overflow: 'hidden', position: 'absolute' }}>
+        <img src={AwesomeImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={GoodImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={OkayImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={BadImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+        <img src={TerribleImg} alt="" width={1} height={1} style={{ opacity: 0 }} />
+      </div>
+
             <footer className="bg-indigo-900 text-white py-6 text-center text-sm">
                 <p>YouMatter — Taking care of your mental health</p>
                 <p className="text-indigo-300">&copy; {new Date().getFullYear()} YouMatter. All rights reserved.</p>            </footer>

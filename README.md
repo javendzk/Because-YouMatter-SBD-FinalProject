@@ -67,7 +67,8 @@ As a platform in the healthcare sector, YouMatter is dedicated to supporting men
 ### Flowchart
 ![Flowchart](https://imgur.com/h0ljtr1.png)
 
----
+## Database Scenario and Website 
+![scheme](https://imgur.com/IPvxUiS.png)
 
 ## 🚀 Getting Started
 

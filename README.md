@@ -66,6 +66,7 @@ As a platform in the healthcare sector, YouMatter is dedicated to supporting men
   <img src="https://img.shields.io/badge/Alibaba-FF6A00?style=flat-square&logo=alibabacloud&logoColor=white" height="24"/>
   <img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white" height="24"/>
   <img src="https://img.shields.io/badge/Telegram-2CA5E0?style=flat-square&logo=telegram&logoColor=white" height="24"/>
+  <img src="https://img.shields.io/badge/Figma-F24E1E?style=flat-square&logo=figma&logoColor=white" height="24"/>
 </p>
 
 ---

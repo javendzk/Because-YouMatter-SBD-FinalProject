@@ -7,7 +7,6 @@
   <img src="https://img.shields.io/badge/%20Version-v1.0.0-blue" />
   <img src="https://img.shields.io/badge/build-passed-green" />
 </p>
----
 
 ## ✨ About YouMatter
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from './Navbar';
 import { useAuth } from '../context/AuthContext';
+import LogoImg from '../assets/logo.png';
 
 const SignUp = () => {
     const navigate = useNavigate();
@@ -158,7 +159,7 @@ const SignUp = () => {
                     className="mb-6 text-center"
                 >
                     <img
-                        src="/src/assets/logo.png"
+                        src={LogoImg}
                         alt="YouMatter Logo"
                         className="mx-auto w-16 h-16 sm:w-20 sm:h-20 mb-3"
                     />

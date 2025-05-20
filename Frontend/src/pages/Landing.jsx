@@ -321,9 +321,9 @@ const Landing = () => {
       transition={{ duration: 0.5 }}
     >
       <motion.img
-        src="/src/assets/emotions.png"
+        src={EmotionsImg}
         alt="YouMatter Mascots"
-        className="object-contain w-auto h-auto max-w-full max-h-full px-4"
+        className="object-contain w-60 h-60 sm:w-80 sm:h-80 max-w-full max-h-full px-4"
         whileHover={{ rotate: [0, -5, 5, -5, 0], transition: { duration: 0.5 } }}
       />
     </motion.div>

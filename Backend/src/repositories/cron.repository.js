@@ -12,7 +12,6 @@ exports.resetDailyLoginStatus = async () => {
              (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
         );
 
-        console.log(`Reset logged_in_today status for ${result.rowCount} users`);
         return result.rowCount;
     } catch (error) {
         console.error('Error in resetDailyLoginStatus repository:', error);

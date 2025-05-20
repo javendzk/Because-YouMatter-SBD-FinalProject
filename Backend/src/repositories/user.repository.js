@@ -6,15 +6,6 @@ const { REDIS_TTL_USER } = process.env;
 
 exports.createUser = async ({ username, password, email, telegram_id, interest, gender, fullname, birthday }) => {
     try {
-        console.log('Repository: Creating user with data:', {
-            username,
-            email,
-            telegram_id: telegram_id || 'not provided',
-            interest: interest || 'not provided',
-            gender: gender || 'not provided',
-            fullname: fullname || 'not provided',
-            birthday: birthday || 'not provided'
-        });
         
         const emailCheck = await db.query(
             'SELECT * FROM users WHERE email = $1',
@@ -22,7 +13,6 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
         );
 
         if (emailCheck.rows.length > 0) {
-            console.log('Repository: Registration failed - Email already exists:', email);
             return null;         
         }
 
@@ -31,9 +21,7 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
         
         const defaultProfilePicture = 'https://i.imgur.com/zZz0JKY.jpeg';
 
-        // Ensure telegram_id is a number or null
         const parsedTelegramId = telegram_id ? (isNaN(Number(telegram_id)) ? null : Number(telegram_id)) : null;
-        console.log('Repository: Parsed telegram_id:', parsedTelegramId);
 
         const result = await db.query(
             `INSERT INTO users 
@@ -43,7 +31,6 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
             [username, hashedPassword, email, parsedTelegramId, interest || null, gender || null, fullname || null, birthday || null, defaultProfilePicture]
         );
 
-        console.log('Repository: User created successfully with ID:', result.rows[0].user_id);
         return result.rows[0];
     } catch (error) {
         console.error('Error in createUser repository:', error);
@@ -54,31 +41,24 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
 
 exports.loginUser = async ({ email, password }) => {
     try {
-        console.log('Repository: Attempting to find user with email:', email);
         
         const result = await db.query(
             'SELECT * FROM users WHERE email = $1',
             [email]
         );
 
-        console.log('Repository: Query result rows count:', result.rows.length);
 
         if (result.rows.length === 0) {
-            console.log('Repository: No user found with email:', email);
             return { success: false, message: 'Invalid email or password' };
         }
 
         const user = result.rows[0];
-        console.log('Repository: User found, checking password');
-        
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log('Repository: Password validation result:', isPasswordValid);
        
         if (!isPasswordValid) {
-            console.log('Repository: Invalid password for user:', email);
             return { success: false, message: 'Invalid email or password' };
         }
-          console.log('Repository: Updating last login for user:', user.user_id);
+
         await db.query(
             'UPDATE users SET last_login = CURRENT_TIMESTAMP, logged_in_today = TRUE WHERE user_id = $1',
             [user.user_id]
@@ -90,7 +70,6 @@ exports.loginUser = async ({ email, password }) => {
         );
         
         const userData = updatedUser.rows[0];
-        console.log('Repository: Login successful for user:', userData.user_id, 'logged_in_today:', userData.logged_in_today);
 
         await redis.delAsync(`user:${userData.user_id}`);
 

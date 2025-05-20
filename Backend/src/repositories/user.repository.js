@@ -6,12 +6,23 @@ const { REDIS_TTL_USER } = process.env;
 
 exports.createUser = async ({ username, password, email, telegram_id, interest, gender, fullname, birthday }) => {
     try {
+        console.log('Repository: Creating user with data:', {
+            username,
+            email,
+            telegram_id: telegram_id || 'not provided',
+            interest: interest || 'not provided',
+            gender: gender || 'not provided',
+            fullname: fullname || 'not provided',
+            birthday: birthday || 'not provided'
+        });
+        
         const emailCheck = await db.query(
             'SELECT * FROM users WHERE email = $1',
             [email]
         );
 
         if (emailCheck.rows.length > 0) {
+            console.log('Repository: Registration failed - Email already exists:', email);
             return null;         
         }
 
@@ -20,14 +31,19 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
         
         const defaultProfilePicture = 'https://i.imgur.com/zZz0JKY.jpeg';
 
+        // Ensure telegram_id is a number or null
+        const parsedTelegramId = telegram_id ? (isNaN(Number(telegram_id)) ? null : Number(telegram_id)) : null;
+        console.log('Repository: Parsed telegram_id:', parsedTelegramId);
+
         const result = await db.query(
             `INSERT INTO users 
             (username, password, email, telegram_id, interest, gender, fullname, birthday, last_login, user_image_url) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, $9) 
             RETURNING user_id, username, email, telegram_id, interest, gender, fullname, birthday, last_login, streak_counter, user_image_url`,
-            [username, hashedPassword, email, telegram_id || null, interest || null, gender || null, fullname || null, birthday || null, defaultProfilePicture]
+            [username, hashedPassword, email, parsedTelegramId, interest || null, gender || null, fullname || null, birthday || null, defaultProfilePicture]
         );
 
+        console.log('Repository: User created successfully with ID:', result.rows[0].user_id);
         return result.rows[0];
     } catch (error) {
         console.error('Error in createUser repository:', error);

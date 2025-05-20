@@ -27,6 +27,16 @@ exports.register = async (req, res) => {
     try {
         const { username, password, email, telegram_id, interest, gender, fullname, birthday } = req.body;
         
+        console.log('Controller: Registration request received with data:', {
+            username,
+            email,
+            telegram_id: telegram_id || 'not provided',
+            interest: interest || 'not provided',
+            gender: gender || 'not provided',
+            fullname: fullname || 'not provided',
+            birthday: birthday || 'not provided'
+        });
+        
         const user = await userRepository.createUser({
             username,
             password,
@@ -39,8 +49,11 @@ exports.register = async (req, res) => {
         });
         
         if (!user) {
+            console.log('Controller: Registration failed - Email already registered:', email);
             return baseResponse(res, false, 400, 'Email already registered', null);
         }
+        
+        console.log('Controller: User registered successfully:', user.user_id);
         
         if (telegram_id) {
             try {

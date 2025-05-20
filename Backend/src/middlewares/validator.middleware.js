@@ -2,7 +2,7 @@ const baseResponse = require('../utils/baseResponse');
 
 
 exports.validateUserRegistration = (req, res, next) => {
-    const { username, email, password, telegram_id, occupation, gender } = req.body;
+    const { username, email, password, telegram_id, interest, gender, fullname, birthday } = req.body;
     
     if (!username || !email || !password) {
         return baseResponse(res, false, 400, 'Username, email, and password are required', null);
@@ -20,9 +20,12 @@ exports.validateUserRegistration = (req, res, next) => {
     if (gender && !['male', 'female', 'others'].includes(gender)) {
         return baseResponse(res, false, 400, 'Gender must be one of: male, female, others', null);
     }
-    
-    if (telegram_id && isNaN(telegram_id)) {
-        return baseResponse(res, false, 400, 'Telegram ID must be a number', null);
+      // Validate telegram_id if provided
+    if (telegram_id !== undefined && telegram_id !== null) {
+        if (isNaN(Number(telegram_id))) {
+            console.log('Telegram ID validation failed:', telegram_id, 'type:', typeof telegram_id);
+            return baseResponse(res, false, 400, 'Telegram ID must be a number', null);
+        }
     }
     
     next();

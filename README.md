@@ -1,4 +1,4 @@
-# YouMatter - Mood Tracker Platform 🚀
+# YouMatter - Mood Tracker Platform 
 ![banner](https://imgur.com/4pP1iWc.png)
 ![lisence](https://img.shields.io/badge/License-MIT-blue) ![](https://img.shields.io/badge/%20Version-v1.0.0-blue) ![](https://img.shields.io/badge/build-passed-green)
 ---
@@ -40,12 +40,12 @@ As a platform in the healthcare sector, YouMatter is dedicated to supporting men
 
 ![developer](https://imgur.com/UMiFWrQ.png)
 
-<table align="center">
+<table align="center" width="100%" style="table-layout:fixed;">
   <tr>
-    <td align="center"><b>Javana Muhammad D.</b><br><i>Lead Fullstack Engineer, PM, System Integrator</i></td>
-    <td align="center"><b>M. Hilmy Mahardika</b><br><i>Backend Engineer</i></td>
-    <td align="center"><b>Laura Fawzia Sambowo</b><br><i>Frontend Engineer, Design</i></td>
-    <td align="center"><b>Zhafira Zahra Alfarisy</b><br><i>Frontend Engineer, Design</i></td>
+    <td align="center" width="25%"><b>Javana Muhammad D.</b><br><i>Lead Fullstack Engineer, PM, System Integrator</i></td>
+    <td align="center" width="25%"><b>M. Hilmy Mahardika</b><br><i>Backend Engineer</i></td>
+    <td align="center" width="25%"><b>Laura Fawzia Sambowo</b><br><i>Frontend Engineer, Design</i></td>
+    <td align="center" width="25%"><b>Zhafira Zahra Alfarisy</b><br><i>Frontend Engineer, Design</i></td>
   </tr>
 </table>
 

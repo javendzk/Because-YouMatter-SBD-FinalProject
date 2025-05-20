@@ -54,8 +54,7 @@ exports.register = async (req, res) => {
         }
         
         console.log('Controller: User registered successfully:', user.user_id);
-        
-        if (telegram_id) {
+          if (telegram_id) {
             try {
                 const telegramService = require('../services/telegram.service');
                 const telegramRepository = require('../repositories/telegram.repository');
@@ -70,14 +69,17 @@ Remember to log your mood daily to maintain your streak and unlock special rewar
 Looking forward to our journey together! 💪
                 `;
                 
-                await telegramService.sendTelegramMessage(telegram_id, welcomeMessage);
+                // Send welcome image instead of text message
+                const welcomeImageUrl = 'https://i.imgur.com/rBOWBm8.png';
+                
+                await telegramService.sendTelegramPhoto(telegram_id, welcomeImageUrl, welcomeMessage);
                 
                 await telegramRepository.createTelegramLog({
                     userId: user.user_id,
-                    messageContent: welcomeMessage
+                    messageContent: `[Welcome Image] ${welcomeMessage}`
                 });
                 
-                console.log(`Welcome message sent to user ${username} via Telegram`);
+                console.log(`Welcome message with image sent to user ${username} via Telegram`);
             } catch (telegramError) {
                 console.error('Failed to send Telegram welcome message:', telegramError);
             }

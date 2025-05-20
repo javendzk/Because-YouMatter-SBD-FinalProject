@@ -27,8 +27,7 @@ const Fill = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isUpdateMode, setIsUpdateMode] = useState(false);
-  const [todayLog, setTodayLog] = useState(null);
-    // Check if user is logged in and if we're in update mode
+  const [todayLog, setTodayLog] = useState(null);  // Check if user is logged in and handle different entry points
   useEffect(() => {
     if (!isAuthenticated) {
       console.log('Fill: User not authenticated, redirecting to signin');
@@ -36,8 +35,28 @@ const Fill = () => {
       return;
     }
     
+    console.log('Fill: Location state:', location.state);
+    
+    // Check if we're coming from tutorial with pre-filled mood
+    if (location.state && location.state.fromTutorial) {
+      console.log('Fill: Coming from tutorial, setting up form');
+      
+      // Pre-fill the form with the mood from tutorial if available
+      if (location.state.mood) {
+        console.log('Fill: Pre-filling with mood from tutorial', location.state.mood);
+        setSelectedMood(location.state.mood);
+      }
+      
+      if (location.state.description) {
+        console.log('Fill: Pre-filling with description from tutorial', location.state.description);
+        setMoodDescription(location.state.description);
+      }
+      
+      // We don't need to check hasLoggedToday when coming directly from tutorial
+      console.log('Fill: Coming from tutorial, skipping hasLoggedToday check');
+    }
     // Check if we're in update mode from Dashboard
-    if (location.state && location.state.isUpdateMode) {
+    else if (location.state && location.state.isUpdateMode) {
       console.log('Fill: In update mode');
       setIsUpdateMode(true);
       
@@ -61,8 +80,9 @@ const Fill = () => {
       };
       
       fetchTodayLog();
-    } else {
-      // Check if user has already logged mood today
+    } 
+    // Regular entry mode - check if user has already logged mood today
+    else {
       const checkTodayLog = async () => {
         try {
           console.log('Fill: Checking if user has already logged mood today');

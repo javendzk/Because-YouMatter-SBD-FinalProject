@@ -5,8 +5,24 @@ import apiClient from './api';
 const userService = {
   // Register a new user
   register: async (userData) => {
-    const response = await apiClient.post('/users/register', userData);
-    return response.data;
+    try {
+      console.log('USER SERVICE: Sending registration request with data:', {
+        ...userData,
+        password: '******' // Mask password for security
+      });
+      
+      const response = await apiClient.post('/users/register', userData);
+      console.log('USER SERVICE: Registration response received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('USER SERVICE: Registration error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      throw error;
+    }
   },
   // Login user
   login: async (credentials) => {
@@ -160,7 +176,37 @@ const userService = {
       console.error('Error checking if first time user:', error);
       return false;
     }
-  }
+  },
+
+  // Update profile with image
+  updateProfileWithImage: async (profileData, imageFile) => {
+    try {
+      const formData = new FormData();
+      
+      // Add image if provided
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      
+      // Add all profile data to form
+      Object.keys(profileData).forEach(key => {
+        if (profileData[key] !== undefined && profileData[key] !== null) {
+          formData.append(key, profileData[key]);
+        }
+      });
+      
+      const response = await apiClient.put('/users/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile with image:', error);
+      throw error;
+    }
+  },
 };
 
 export default userService;

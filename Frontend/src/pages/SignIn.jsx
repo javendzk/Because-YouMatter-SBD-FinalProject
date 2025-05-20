@@ -151,11 +151,6 @@ const SignIn = () => {
                             autoComplete="current-password"
                             onFocus={() => console.log('Password field focused')}
                         />
-                        <div className="mt-2 text-right">
-                            <a href="#" className="text-sm text-indigo-600 hover:underline">
-                                Forgot password?
-                            </a>
-                        </div>
                     </motion.div>
 
                     {error && (

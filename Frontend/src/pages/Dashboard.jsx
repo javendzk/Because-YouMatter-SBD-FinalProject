@@ -19,24 +19,28 @@ const MOOD_COLORS = {
     terrible: "#9FC0FF"  // Light Blue
 };
 
-export default function Dashboard() {
-    const location = useLocation();
+export default function Dashboard() {    // Import React hooks at the top    const location = useLocation();
     const navigate = useNavigate();
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, logout, updateProfile, updateProfileWithImage } = useAuth();
     const todayMood = location.state?.mood || null;
     
     // Helper state for month/year selection
     const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-    const [showProfileEdit, setShowProfileEdit] = useState(false);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());    const [showProfileEdit, setShowProfileEdit] = useState(false);
+    const [profileImage, setProfileImage] = useState(null);
+    const [profileImagePreview, setProfileImagePreview] = useState(null);
     const [editedProfile, setEditedProfile] = useState({
         fullName: "",
         username: "",
         email: "",
         birthday: "",
         gender: "",
-        hobbies: ""
+        hobbies: "",
+        user_image_url: ""
     });
+    
+    // New state for success message
+    const [successMessage, setSuccessMessage] = useState(null);
     
     // Helper function to convert month name to month number (0-11)
     const getMonthNumber = (monthName) => {
@@ -170,7 +174,34 @@ export default function Dashboard() {
         } finally {
             setIsLoading(false);
         }
-    };
+    };    // Initialize editedProfile with userData when it's loaded or updated
+    useEffect(() => {
+        if (user) {
+            setEditedProfile({
+                fullName: user.fullname || "",
+                username: user.username || "",
+                email: user.email || "",
+                birthday: user.birthday || "",
+                gender: user.gender || "",
+                hobbies: user.interest || "",
+                user_image_url: user.user_image_url || ""
+            });
+        }
+    }, [user]);
+      // Update editedProfile when showProfileEdit changes and userData is available
+    useEffect(() => {
+        if (showProfileEdit && userData) {
+            setEditedProfile({
+                fullName: userData.fullName || "",
+                username: userData.username || "",
+                email: userData.email || "",
+                birthday: userData.birthday || "",
+                gender: userData.gender || "",
+                hobbies: userData.interest || "",
+                user_image_url: userData.profilePicture || ""
+            });
+        }
+    }, [showProfileEdit, userData]);
 
     // Fetch mood history
     const fetchMoodHistory = async () => {
@@ -224,7 +255,6 @@ export default function Dashboard() {
             setError("Failed to load mood history. Please try again.");
         }
     };
-
     // Handle log deletion
     const handleDeleteLog = async (logId) => {
         setIsDeleting(true);
@@ -285,9 +315,20 @@ export default function Dashboard() {
             console.error("Error updating mood:", error);
             setError("Failed to update mood. Please try again.");
         }
+    };    // Handle profile image changes
+    const handleProfileImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
-    
-    // Add handler for calendar day clicks
+
+    // Add handler for calendar day clicks - view only, no editing
     const handleCalendarClick = (day) => {
         // Find the mood for the selected day, if any
         const selectedDate = new Date(selectedYear, getMonthNumber(selectedMonth), day);
@@ -299,23 +340,19 @@ export default function Dashboard() {
         });
         
         if (moodForDay) {
-            setSelectedMood({
-                day,
-                date: selectedDate,
-                mood: moodForDay.mood,
-                description: moodForDay.description,
-                logId: moodForDay.id
-            });
-            setEditText(moodForDay.description);
+            // Just log info about the mood, no longer setting it for edit
+            console.log(`Mood for ${formattedDate}: ${moodForDay.mood} - ${moodForDay.description}`);
+            // We can optionally add a toast or alert to show the mood details
+            alert(`${moodForDay.mood.charAt(0).toUpperCase() + moodForDay.mood.slice(1)}: ${moodForDay.description}`);
         } else {
             console.log(`No mood logged for ${formattedDate}`);
         }
-    };
-
-    // Handle profile save
+    };    // Handle profile save
     const handleProfileSave = async () => {
         try {
             setIsLoading(true);
+            setError(null);
+            setSuccessMessage(null);
             console.log('Saving profile data:', editedProfile);
             
             // Prepare data for API
@@ -328,25 +365,44 @@ export default function Dashboard() {
                 interest: editedProfile.hobbies
             };
             
-            // Call API to update profile
-            const { updateProfile } = useAuth();
-            const result = await updateProfile(profileData);
+            // Use the updateProfileWithImage function to handle both profile data and image
+            const result = await updateProfileWithImage(profileData, profileImage);
             
             if (result.success) {
-                console.log('Profile updated successfully');
-                // Update local state
+                console.log('Profile updated successfully:', result.data);
+                
+                // Update local state with the returned data
                 setUserData(prev => ({
                     ...prev,
-                    fullName: editedProfile.fullName,
-                    username: editedProfile.username,
-                    email: editedProfile.email,
-                    birthday: editedProfile.birthday,
-                    gender: editedProfile.gender,
-                    interest: editedProfile.hobbies
+                    fullName: result.data.fullname || editedProfile.fullName,
+                    username: result.data.username || editedProfile.username,
+                    email: result.data.email || editedProfile.email,
+                    birthday: result.data.birthday || editedProfile.birthday,
+                    gender: result.data.gender || editedProfile.gender,
+                    hobbies: result.data.interest || editedProfile.hobbies,
+                    profilePicture: result.data.user_image_url || result.data.profilePicture || prev.profilePicture
                 }));
+                  // Reset image states
+                setProfileImage(null);
+                setProfileImagePreview(null);
                 
-                // Close modal
-                setShowProfileEdit(false);
+                // Set success message
+                setSuccessMessage('Profile updated successfully!');
+                
+                // Close modal after a short delay to show success message
+                setTimeout(() => {
+                    setShowProfileEdit(false);
+                    // Clear success message after modal is closed
+                    setTimeout(() => setSuccessMessage(null), 500);
+                }, 1500);
+                
+                // Set success message
+                setSuccessMessage("Profile updated successfully!");
+                
+                // Clear success message after 3 seconds
+                setTimeout(() => {
+                    setSuccessMessage(null);
+                }, 3000);
             } else {
                 setError('Failed to update profile: ' + result.message);
             }
@@ -639,6 +695,31 @@ export default function Dashboard() {
                         >
                             <h3 className="text-lg font-bold text-indigo-900 mb-4">Edit Your Profile</h3>
 
+                            {/* Profile Image Upload */}
+                            <div className="mb-6 flex flex-col items-center">
+                                <div className="relative w-24 h-24 mb-3">
+                                    <img 
+                                        src={profileImagePreview || userData.profilePicture || '/src/assets/placeholder.jpg'}
+                                        alt="Profile Preview" 
+                                        className="w-full h-full rounded-full object-cover border-2 border-indigo-100"
+                                    />
+                                    <label htmlFor="profile-image-upload" className="absolute bottom-0 right-0 bg-indigo-600 rounded-full p-2 cursor-pointer shadow-md">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                            <circle cx="12" cy="13" r="4"></circle>
+                                        </svg>
+                                    </label>
+                                    <input 
+                                        id="profile-image-upload" 
+                                        type="file" 
+                                        accept="image/*" 
+                                        className="hidden"
+                                        onChange={handleProfileImageChange} 
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500">Click the camera icon to change your profile picture</p>
+                            </div>
+
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-gray-700 text-sm font-medium mb-2">
@@ -733,25 +814,49 @@ export default function Dashboard() {
                                         className="w-full p-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     />
                                 </div>
-                            </div>
-
-                            <div className="mt-6 flex justify-end gap-3">
-                                <motion.button
-                                    onClick={() => setShowProfileEdit(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50"
-                                    whileHover={{ scale: 1.03 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    Cancel
-                                </motion.button>
-                                <motion.button
-                                    onClick={handleProfileSave}
-                                    className="px-4 py-2 bg-indigo-600 rounded-lg text-white text-sm hover:bg-indigo-700"
-                                    whileHover={{ scale: 1.03 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    Save Changes
-                                </motion.button>
+                            </div>                                    <div className="mt-6 flex flex-col gap-3">                                {error && (
+                                    <div className="text-red-500 text-sm bg-red-50 p-2 rounded-md">
+                                        {error}
+                                    </div>
+                                )}
+                                {successMessage && (
+                                    <div className="text-green-500 text-sm bg-green-50 p-2 rounded-md">
+                                        {successMessage}
+                                    </div>
+                                )}
+                                {successMessage && (
+                                    <div className="text-green-500 text-sm bg-green-50 p-2 rounded-md">
+                                        {successMessage}
+                                    </div>
+                                )}
+                                <div className="flex justify-end gap-3">
+                                    <motion.button
+                                        onClick={() => {
+                                            setShowProfileEdit(false);
+                                            setError(null);
+                                        }}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50"
+                                        whileHover={{ scale: 1.03 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        disabled={isLoading}
+                                    >
+                                        Cancel
+                                    </motion.button>
+                                    <motion.button
+                                        onClick={handleProfileSave}
+                                        className={`px-4 py-2 rounded-lg text-white text-sm ${isLoading ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                        whileHover={isLoading ? {} : { scale: 1.03 }}
+                                        whileTap={isLoading ? {} : { scale: 0.98 }}
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? (
+                                            <div className="flex items-center justify-center">
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                                <span>Saving...</span>
+                                            </div>
+                                        ) : 'Save Changes'}
+                                    </motion.button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -887,17 +992,9 @@ export default function Dashboard() {
                     </motion.div>
                 </div>
 
-                {/* Mood Timeline header - more mobile friendly */}
-                <div className="mb-4">
+                {/* Mood Timeline header - more mobile friendly */}                <div className="mb-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-lg sm:text-xl font-bold text-indigo-900">Your Mood Timeline</h2>
-                        <div className="flex items-center space-x-2">
-                            <button
-                                className="flex items-center text-sm text-indigo-600 bg-blue-50 px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-full"
-                            >
-                                <Filter size={14} className="mr-1.5" /> <span className="hidden sm:inline">Filter</span>
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -963,72 +1060,34 @@ export default function Dashboard() {
                                     </div>
                                     <p className="text-xs text-gray-500">Born on {userData.birthday ? new Date(userData.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</p>
                                 </div>
-                            </div>
-
-                            {/* Hobbies Section */}
+                            </div>                            {/* Hobbies Section */}
                             <div className="mt-4 bg-indigo-50 p-3 rounded-lg">
                                 <h4 className="text-xs font-semibold text-indigo-700 mb-1">Hobbies & Interests</h4>
-                                <p className="text-xs text-gray-600">{userData.hobbies}</p>
-                            </div>
-                            <motion.button
+                                <p className="text-xs text-gray-600">{userData.interest}</p>
+                            </div><motion.button
                                 className="mt-4 px-4 py-2 border rounded-full text-indigo-900 text-sm hover:bg-[#F5F9FF] transition flex items-center gap-1"
                                 whileHover={{ scale: 1.05, backgroundColor: "#f9fafb" }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => {
-                                    setEditedProfile({ ...userData });
+                                    setEditedProfile({
+                                        fullName: userData.fullName || "",                                        username: userData.username || "",
+                                        email: userData.email || "",
+                                        birthday: userData.birthday || "",
+                                        gender: userData.gender || "",
+                                        hobbies: userData.interest || "",
+                                        user_image_url: userData.profilePicture || ""
+                                    });                                    setError(null);
+                                    setSuccessMessage(null);
                                     setShowProfileEdit(true);
                                 }}
-                            >
-                                <Pencil size={14} /> Edit Profile
+                            >                                <Pencil size={14} /> Edit Profile
                             </motion.button>
-                        </div>{/* Streak Flame */}                    <div className="bg-white rounded-3xl shadow-md p-6 text-center">
-                            <h3 className="text-lg font-bold text-indigo-900 mb-3">Your Current Streak</h3>                        <motion.div
-                                className="flame-wrapper py-2"
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
-                            >
-                                <div className="fire">
-                                    <div className="fire-left">
-                                        <div className="main-fire"></div>
-                                        <div className="particle-fire"></div>
-                                    </div>
-                                    <div className="fire-center">
-                                        <div className="main-fire"></div>
-                                        <div className="particle-fire"></div>
-                                    </div>
-                                    <div className="fire-right">
-                                        <div className="main-fire"></div>
-                                        <div className="particle-fire"></div>
-                                    </div>
-                                    <div className="fire-bottom">
-                                        <div className="main-fire"></div>
-                                    </div>
-                                </div>
-                                <span className="streak-number">
-                                    {userData.streakDays}
-                                </span>                            </motion.div>
-                            <p className="text-sm text-gray-600 mt-2 px-2 whitespace-normal">{userData.streakDays} days in a row!</p>                            <div className="flex justify-center gap-2 sm:gap-5 mt-4 overflow-hidden">
-                                {["M", "T", "W", "T", "F", "S", "S"].map((day, i) => (
-                                    <div key={i} className="flex flex-col items-center">
-                                        <div
-                                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full text-sm sm:text-md flex items-center justify-center mb-1 ${i + 1 <= userData.streakDays ? 'bg-indigo-700 text-white' : 'bg-indigo-100 text-indigo-800'}`}
-                                        >
-                                            {i + 1}
-                                        </div>
-                                        <span className="text-xs text-gray-500">{day}</span>
-                                    </div>
-                                ))}
-                            </div>
-                                <div className="mt-6 py-2 bg-yellow-50 rounded-full px-4">
-                                    <p className="text-sm text-amber-800 font-medium">
-                                        🎉 Congratulations on your weekly streak!
-                                    </p>
-                                </div>                        
-                            </div>                    
-                        </section>                    {/* Right Column */}
+                        </div>
+                    </section>
+                    
+                    {/* Right Column */}
                     <section className="lg:col-span-2 space-y-6">
-                        {/* Mood History Section */}                        <MoodHistoryTimeline
+                        {/* Mood History Section */}<MoodHistoryTimeline
                             moodHistoryData={moodHistory}
                             onCalendarOpen={() => setShowCalendar(true)}
                             onDeleteLog={handleDeleteLog}
@@ -1036,48 +1095,102 @@ export default function Dashboard() {
                             deleteLogId={deleteLogId}
                         />
 
-                        {/* Weekly Mood Tracker */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                        
+                        {/* Weekly Mood Tracker */}                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                        
+                            {/* Weekly Mood Overview Card */}
                             <div className="bg-white rounded-3xl shadow-md p-6">
-                            <h4 className="text-center text-indigo-900 font-semibold mb-4">Your Mood Dashboard</h4>
-                            <div className="flex justify-around text-center mb-4">
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.3 }}
-                                >
-                                    <div className="text-2xl font-bold text-indigo-900">{userData.totalDays}</div>
-                                    <div className="text-xs text-gray-500">Days Tracked</div>
-                                </motion.div>
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.4 }}
-                                >
-                                    <div className="text-2xl font-bold text-green-500">{userData.goodDays}</div>
-                                    <div className="text-xs text-gray-500">Good Days</div>
-                                </motion.div>
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.5 }}
-                                >
-                                    <div className="text-2xl font-bold text-orange-500">{userData.stressedDays}</div>
-                                    <div className="text-xs text-gray-500">Stressed Days</div>
-                                </motion.div>
-                            </div>                            <div className="h-32 bg-white rounded-xl flex items-end justify-around p-2">
-                                {weeklyMoodData.map((v, i) => (
+                                <h4 className="text-center text-indigo-900 font-semibold mb-4">Weekly Mood Overview</h4>
+                                <div className="flex justify-around text-center mb-4">
                                     <motion.div
-                                        key={i}
-                                        className="w-4 bg-indigo-900 rounded-full rounded-b-none"
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${(v / maxMoodValue) * 100}%` }}
-                                        transition={{ duration: 0.8, delay: 0.2 + (i * 0.1), ease: "backOut" }}
-                                    ></motion.div>
-                                ))}
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.3 }}
+                                    >
+                                        <div className="text-2xl font-bold text-indigo-900">{userData.totalDays}</div>
+                                        <div className="text-xs text-gray-500">Days Tracked</div>
+                                    </motion.div>
+                                    <motion.div
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.4 }}
+                                    >
+                                        <div className="text-2xl font-bold text-green-500">{userData.goodDays}</div>
+                                        <div className="text-xs text-gray-500">Good Days</div>
+                                    </motion.div>
+                                    <motion.div
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: 0.5 }}
+                                    >
+                                        <div className="text-2xl font-bold text-orange-500">{userData.stressedDays}</div>
+                                        <div className="text-xs text-gray-500">Stressed Days</div>
+                                    </motion.div>
+                                </div>
+                                <div className="h-32 bg-white rounded-xl flex items-end justify-around p-2">
+                                    {weeklyMoodData.map((v, i) => (
+                                        <motion.div
+                                            key={i}
+                                            className="w-4 bg-indigo-900 rounded-full rounded-b-none"
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${(v / maxMoodValue) * 100}%` }}
+                                            transition={{ duration: 0.8, delay: 0.2 + (i * 0.1), ease: "backOut" }}
+                                        ></motion.div>
+                                    ))}
+                                </div>
                             </div>
-                            <p className="text-xs text-center text-gray-500 mt-4">Weekly Mood Overview</p>
-                        </div>
+                            
+                            {/* Streak Card */}
+                            <div className="bg-white rounded-3xl shadow-md p-6 text-center">
+                                <h4 className="text-center text-indigo-900 font-semibold mb-3">Your Current Streak</h4>
+                                <motion.div
+                                    className="flame-wrapper py-2"
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+                                >
+                                    <div className="fire">
+                                        <div className="fire-left">
+                                            <div className="main-fire"></div>
+                                            <div className="particle-fire"></div>
+                                        </div>
+                                        <div className="fire-center">
+                                            <div className="main-fire"></div>
+                                            <div className="particle-fire"></div>
+                                        </div>
+                                        <div className="fire-right">
+                                            <div className="main-fire"></div>
+                                            <div className="particle-fire"></div>
+                                        </div>
+                                        <div className="fire-bottom">
+                                            <div className="main-fire"></div>
+                                        </div>
+                                    </div>
+                                    <span className="streak-number">
+                                        {userData.streakDays}
+                                    </span>
+                                </motion.div>
+                                  <div className="flex justify-center gap-2 sm:gap-5 mt-4 overflow-hidden">
+                                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                                        <motion.div
+                                            key={`day-${i}`}
+                                            className="flex flex-col items-center"
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.2 + (i * 0.1) }}
+                                        >
+                                            <div className="w-6 h-6 rounded-full bg-indigo-900 flex items-center justify-center text-white text-xs mb-1">
+                                                {i + 1}
+                                            </div>
+                                            <div className="text-xs text-gray-500">{day}</div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                                
+                                <div className="mt-6 py-2 bg-yellow-50 rounded-full px-4">
+                                    <p className="text-sm text-amber-800 font-medium">
+                                        🎉 Congratulations on your {userData.streakDays} streak!
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </section>
                 </main>

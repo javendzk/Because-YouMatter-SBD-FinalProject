@@ -2,11 +2,18 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Navbar({ userData }) {
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { logout } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
 
     return (
         <motion.header
@@ -14,12 +21,12 @@ export default function Navbar({ userData }) {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
-        >
-            <motion.div
-                className="flex items-center gap-2 sm:gap-3"
+        >            <motion.div
+                className="flex items-center gap-2 sm:gap-3 cursor-pointer"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
+                onClick={() => navigate('/')}
             >
                 <motion.img
                     src="/src/assets/logo.png"
@@ -45,19 +52,36 @@ export default function Navbar({ userData }) {
                 initial={{ x: 20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-            >
-                <motion.a
-                    className="text-[#4F5D87] font-medium hover:underline"
-                    href="#"
+            >                <motion.a
+                    className="text-[#4F5D87] font-medium hover:underline cursor-pointer"
                     whileHover={{ scale: 1.05, color: "#3730a3" }}
                     whileTap={{ scale: 0.95 }}
+                    onClick={() => navigate('/dashboard')}
                 >
                     Dashboard
-                </motion.a>
-                {userData.loggedIn ? (
-                    <div className="flex items-center gap-2">
-                        <img src={userData.profilePicture} alt="avatar" className="w-8 h-8 rounded-full" />
-                        <span className="text-sm text-[#4F5D87] font-semibold">{userData.username}</span>
+                </motion.a>{userData.loggedIn ? (
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <img 
+                                src={userData.profilePicture || '/src/assets/placeholder.jpg'} 
+                                alt="Profile" 
+                                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = '/src/assets/placeholder.jpg';
+                                }}
+                            />
+                            <span className="text-sm text-[#4F5D87] font-semibold">{userData.username}</span>
+                        </div>
+                        <motion.button
+                            className="flex items-center gap-1 text-red-500 hover:text-red-700"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleLogout}
+                        >
+                            <LogOut size={16} />
+                            <span className="text-sm">Logout</span>
+                        </motion.button>
                     </div>
                 ) : (<motion.button
                     className="bg-[#CEDEFF] px-5 py-2 rounded-full text-[#4F5D87] border border-[#4F5D87] hover:bg-[#BBD4FF] transition min-h-[44px]"
@@ -88,12 +112,31 @@ export default function Navbar({ userData }) {
                                 }}
                             >
                                 Dashboard
-                            </a>
-                            {userData.loggedIn ? (
-                                <div className="flex items-center gap-2 py-2">
-                                    <img src={userData.profilePicture} alt="avatar" className="w-8 h-8 rounded-full" />
-                                    <span className="text-sm text-[#4F5D87] font-semibold">{userData.username}</span>
-                                </div>
+                            </a>                            {userData.loggedIn ? (
+                                <>
+                                    <div className="flex items-center gap-2 py-2">
+                                        <img 
+                                            src={userData.profilePicture || '/src/assets/placeholder.jpg'} 
+                                            alt="Profile" 
+                                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/src/assets/placeholder.jpg';
+                                            }}
+                                        />
+                                        <span className="text-sm text-[#4F5D87] font-semibold">{userData.username}</span>
+                                    </div>
+                                    <button
+                                        className="flex items-center gap-2 text-red-500 hover:text-red-700 py-2"
+                                        onClick={() => {
+                                            setIsMenuOpen(false);
+                                            handleLogout();
+                                        }}
+                                    >
+                                        <LogOut size={16} />
+                                        <span className="text-sm">Logout</span>
+                                    </button>
+                                </>
                             ) : (
                                 <button
                                     className="bg-[#CEDEFF] px-5 py-2 rounded-full text-[#4F5D87] border border-[#4F5D87] hover:bg-[#BBD4FF] transition w-4/5 mx-auto"

@@ -1,6 +1,12 @@
 # YouMatter - SBD 7 Final Project 
-![banner](https://imgur.com/4pP1iWc.png)
-![lisence](https://img.shields.io/badge/License-MIT-blue) ![](https://img.shields.io/badge/%20Version-v1.0.0-blue) ![](https://img.shields.io/badge/build-passed-green)
+<p align="center">
+  <img src="https://imgur.com/4pP1iWc.png" alt="banner" />
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue" alt="lisence" />
+  <img src="https://img.shields.io/badge/%20Version-v1.0.0-blue" />
+  <img src="https://img.shields.io/badge/build-passed-green" />
+</p>
 ---
 
 ## ✨ About YouMatter

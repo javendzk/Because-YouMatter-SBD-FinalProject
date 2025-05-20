@@ -8,6 +8,12 @@ import MoodHistoryTimeline from "../components/MoodHistoryTimeline";
 import { useAuth } from "../context/AuthContext";
 import logService from "../services/logService";
 import rewardService from "../services/rewardService";
+import AwesomeImg from '../assets/emotions/Awesome.png';
+import GoodImg from '../assets/emotions/Good.png';
+import OkayImg from '../assets/emotions/Okay.png';
+import BadImg from '../assets/emotions/Bad.png';
+import TerribleImg from '../assets/emotions/Terrible.png';
+import LogoImg from '../assets/logo.png';
 
 const MOOD_COLORS = {
     awesome: "#FDDD6F", // Yellow
@@ -15,6 +21,14 @@ const MOOD_COLORS = {
     okay: "#FF8AA6",    // Pink
     bad: "#FF7D35",     // Orange
     terrible: "#9FC0FF"  // Light Blue
+};
+
+const MOOD_IMAGES = {
+    awesome: AwesomeImg,
+    good: GoodImg,
+    okay: OkayImg,
+    bad: BadImg,
+    terrible: TerribleImg,
 };
 
 export default function Dashboard() {    
@@ -198,7 +212,7 @@ export default function Dashboard() {
                         month,
                         weekday,
                         mood: moodFormatted,color: MOOD_COLORS[log.mood] || "#46CD87", 
-                        imageSrc: `/src/assets/emotions/${moodFormatted}.png`,                        description: log.day_description || "No description provided.",
+                        imageSrc: MOOD_IMAGES[log.mood],                        description: log.day_description || "No description provided.",
                         tags: Array.isArray(tags) ? tags : [], 
                         ai_insight: log.insight || "AI insight not available yet.",
                         web_message: log.llm_response?.webMessage || "AI is analyzing your mood pattern. Check back soon for insights!",

@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { Calendar, Filter, Edit, ChevronDown, ExternalLink, Trash2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AwesomeImg from '../assets/emotions/Awesome.png';
+import GoodImg from '../assets/emotions/Good.png';
+import OkayImg from '../assets/emotions/Okay.png';
+import BadImg from '../assets/emotions/Bad.png';
+import TerribleImg from '../assets/emotions/Terrible.png';
 
 const MOOD_COLORS = {
     awesome: "#FDDD6F", // Yellow
@@ -8,6 +13,14 @@ const MOOD_COLORS = {
     okay: "#FF8AA6",    // Pink
     bad: "#FF7D35",     // Orange
     terrible: "#9FC0FF"  // Light Blue
+};
+
+const MOOD_IMAGES = {
+  awesome: AwesomeImg,
+  good: GoodImg,
+  okay: OkayImg,
+  bad: BadImg,
+  terrible: TerribleImg,
 };
 
 export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, onDeleteLog, isDeleting, deleteLogId }) {
@@ -143,11 +156,11 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                                             style={{ backgroundColor: mood.color }}
                                         >
                                             <img
-                                                src={mood.imageSrc}
+                                                src={MOOD_IMAGES[mood.mood?.toLowerCase()]}
                                                 alt={mood.mood}
                                                 className="w-11 h-11 object-contain"
                                                 onError={(e) => {
-                                                    e.target.src = "/src/assets/placeholder.jpg";
+                                                    e.target.src = AwesomeImg;
                                                 }}
                                             />
                                         </div>

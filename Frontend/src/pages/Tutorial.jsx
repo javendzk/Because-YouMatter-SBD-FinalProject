@@ -2,14 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import { useAuth } from '../context/AuthContext';
+import AwesomeImg from '../assets/emotions/Awesome.png';
+import GoodImg from '../assets/emotions/Good.png';
+import OkayImg from '../assets/emotions/Okay.png';
+import BadImg from '../assets/emotions/Bad.png';
+import TerribleImg from '../assets/emotions/Terrible.png';
 
-// Import the same mood colors used in Fill.jsx for consistency
 const MOOD_COLORS = {
   awesome: "#FDDD6F", // Yellow
   good: "#46CD87",    // Green
   okay: "#FF8AA6",    // Pink
   bad: "#FF7D35",     // Orange
   terrible: "#9FC0FF"  // Light Blue
+};
+
+const MOOD_IMAGES = {
+  awesome: AwesomeImg,
+  good: GoodImg,
+  okay: OkayImg,
+  bad: BadImg,
+  terrible: TerribleImg,
 };
 
 const Tutorial = () => {
@@ -216,12 +228,12 @@ const Tutorial = () => {
             }}
           >
             <img 
-              src={`/src/assets/emotions/${selectedMood}.png`}
+              src={MOOD_IMAGES[selectedMood]}
               alt={selectedMood}
               className="w-32 h-32 object-contain"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = `/assets/emotions/${selectedMood}.png`;
+                e.target.src = AwesomeImg;
               }}
             />
           </div>

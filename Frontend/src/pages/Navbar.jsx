@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import LogoImg from '../assets/logo.png';
 
 export default function Navbar({ userData }) {
     const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function Navbar({ userData }) {
                 onClick={() => navigate('/')}
             >
                 <motion.img
-                    src="/src/assets/logo.png"
+                    src={LogoImg}
                     alt="logo"
                     className="w-8 h-8 sm:w-10 sm:h-10"
                     whileHover={{ rotate: 10, scale: 1.1 }}
@@ -60,12 +61,12 @@ export default function Navbar({ userData }) {
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <img 
-                                src={userData.profilePicture || '/src/assets/placeholder.jpg'} 
+                                src={userData.profilePicture || LogoImg} 
                                 alt="Profile" 
                                 className="w-8 h-8 rounded-full object-cover border border-gray-200"
                                 onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = '/src/assets/placeholder.jpg';
+                                    e.target.src = LogoImg;
                                 }}
                             />
                             <span className="text-sm text-[#4F5D87] font-semibold">{userData.username}</span>
@@ -112,12 +113,12 @@ export default function Navbar({ userData }) {
                                 <>
                                     <div className="flex items-center gap-2 py-2">
                                         <img 
-                                            src={userData.profilePicture || '/src/assets/placeholder.jpg'} 
+                                            src={userData.profilePicture || LogoImg} 
                                             alt="Profile" 
                                             className="w-8 h-8 rounded-full object-cover border border-gray-200"
                                             onError={(e) => {
                                                 e.target.onerror = null;
-                                                e.target.src = '/src/assets/placeholder.jpg';
+                                                e.target.src = LogoImg;
                                             }}
                                         />
                                         <span className="text-sm text-[#4F5D87] font-semibold">{userData.username}</span>

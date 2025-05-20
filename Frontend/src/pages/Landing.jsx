@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "./Navbar";
+import LogoImg from '../assets/logo.png';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -205,7 +206,7 @@ const Landing = () => {
       transition={{ duration: 0.5 }}
     >
       <img
-        src="/src/assets/image 22.png"
+        src={LogoImg}
         alt="Mood Selection"
         className="object-contain w-full h-full max-h-[90%] hover:scale-105 transition-transform duration-300"
       />

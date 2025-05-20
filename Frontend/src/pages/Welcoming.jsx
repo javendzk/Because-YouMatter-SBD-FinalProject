@@ -6,6 +6,12 @@ import '../assets/styles/flameAnimation.css';
 import { useAuth } from '../context/AuthContext';
 import logService from '../services/logService';
 import userService from '../services/userService';
+import AwesomeImg from '../assets/emotions/Awesome.png';
+import GoodImg from '../assets/emotions/Good.png';
+import OkayImg from '../assets/emotions/Okay.png';
+import BadImg from '../assets/emotions/Bad.png';
+import TerribleImg from '../assets/emotions/Terrible.png';
+import LogoImg from '../assets/logo.png';
 
 const MOOD_COLORS = {
     awesome: "#FDDD6F", // Yellow
@@ -21,6 +27,14 @@ const MOOD_MESSAGES = {
     okay: "Taking things one step at a time - that's okay!",
     bad: "It's alright to have bad days - we're here for you.",
     terrible: "We're here to support you through difficult times."
+};
+
+const MOOD_IMAGES = {
+  awesome: AwesomeImg,
+  good: GoodImg,
+  okay: OkayImg,
+  bad: BadImg,
+  terrible: TerribleImg,
 };
 
 const Welcoming = () => {
@@ -142,7 +156,7 @@ const Welcoming = () => {
                     className="my-4"
                 >
                     <img
-                        src={`/src/assets/emotions/${mood.charAt(0).toUpperCase() + mood.slice(1)}.png`}
+                        src={MOOD_IMAGES[mood]}
                         alt={`${mood} mood`}
                         className="w-24 h-24 mx-auto"
                         onError={(e) => {
@@ -192,7 +206,7 @@ const Welcoming = () => {
                             className="absolute inset-0"
                         />
                         <img
-                            src="/src/assets/logo.png"
+                            src={LogoImg}
                             alt="YouMatter Logo"
                             className="w-32 h-32 float-animation"
                         />

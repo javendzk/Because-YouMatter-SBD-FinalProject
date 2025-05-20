@@ -95,7 +95,6 @@ exports.generateFeedback = async (dayDescription, mood) => {
                 throw new Error('No JSON found in response');
             }
             
-            // Ensure all required fields exist
             if (!parsedResponse.tags || !Array.isArray(parsedResponse.tags)) {
                 parsedResponse.tags = generateDefaultTags(dayDescription, mood);
             }

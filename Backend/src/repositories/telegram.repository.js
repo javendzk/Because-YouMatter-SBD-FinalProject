@@ -39,7 +39,6 @@ exports.getUserTelegramId = async (userId) => {
 
 exports.hasStreakRewardBeenSent = async (userId, streakValue) => {
     try {
-        // Search for messages containing streak milestone notification for this specific streak
         const result = await db.query(
             `SELECT * FROM telegram_logs 
             WHERE user_id = $1 

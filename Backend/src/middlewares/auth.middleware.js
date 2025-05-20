@@ -7,7 +7,6 @@ require('dotenv').config();
 exports.verifyToken = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        // console.log(authHeader) buat debug
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return baseResponse(res, false, 401, 'Access token is missing or invalid', null);
         }
@@ -19,9 +18,7 @@ exports.verifyToken = (req, res, next) => {
         
         next();
         
-    } catch (error) {
-        console.error('Auth middleware error:', error);
-        
+    } catch (error) {        
         if (error.name === 'TokenExpiredError') {
             return baseResponse(res, false, 401, 'Token expired', null);
         }

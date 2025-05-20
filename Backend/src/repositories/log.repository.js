@@ -76,7 +76,6 @@ exports.getTodayLogByUserId = async (userId) => {
             [userId]
         );
 
-        console.log(result.rows);
         
         if (result.rows.length === 0) {
             return null;
@@ -159,7 +158,6 @@ exports.updateUserStreak = async (userId) => {
             );
             
             const daysDifference = parseInt(diffResult.rows[0].days_difference);
-            console.log(`[Streak] Days difference for user ${userId}: ${daysDifference}`);
             
             let result;
             if (daysDifference === 1) {
@@ -180,7 +178,6 @@ exports.updateUserStreak = async (userId) => {
                 );
             }
             
-            console.log(`[Streak] Updated streak for user ${userId}: ${JSON.stringify(result.rows[0])}`);
             return result.rows[0];
         } else {
             const result = await db.query(
@@ -190,7 +187,6 @@ exports.updateUserStreak = async (userId) => {
                 RETURNING streak_counter`,
                 [userId]
             );
-            console.log(`[Streak] First log for user ${userId}, setting streak to 1`);
             return result.rows[0];
         }
     } catch (error) {
@@ -260,8 +256,6 @@ exports.getDailyLogsByUserId = async (userId) => {
             ORDER BY dl.date DESC, dl.time DESC`,
             [userId]
         );
-
-        console.log(result.rows);
         
         const logs = result.rows;
         

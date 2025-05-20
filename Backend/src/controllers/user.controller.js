@@ -27,15 +27,6 @@ exports.register = async (req, res) => {
     try {
         const { username, password, email, telegram_id, interest, gender, fullname, birthday } = req.body;
         
-        console.log('Controller: Registration request received with data:', {
-            username,
-            email,
-            telegram_id: telegram_id || 'not provided',
-            interest: interest || 'not provided',
-            gender: gender || 'not provided',
-            fullname: fullname || 'not provided',
-            birthday: birthday || 'not provided'
-        });
         
         const user = await userRepository.createUser({
             username,
@@ -49,11 +40,9 @@ exports.register = async (req, res) => {
         });
         
         if (!user) {
-            console.log('Controller: Registration failed - Email already registered:', email);
             return baseResponse(res, false, 400, 'Email already registered', null);
         }
         
-        console.log('Controller: User registered successfully:', user.user_id);
           if (telegram_id) {
             try {
                 const telegramService = require('../services/telegram.service');
@@ -69,7 +58,6 @@ Remember to log your mood daily to maintain your streak and unlock special rewar
 Looking forward to our journey together! 💪
                 `;
                 
-                // Send welcome image instead of text message
                 const welcomeImageUrl = 'https://i.imgur.com/rBOWBm8.png';
                 
                 await telegramService.sendTelegramPhoto(telegram_id, welcomeImageUrl, welcomeMessage);
@@ -79,7 +67,6 @@ Looking forward to our journey together! 💪
                     messageContent: `[Welcome Image] ${welcomeMessage}`
                 });
                 
-                console.log(`Welcome message with image sent to user ${username} via Telegram`);
             } catch (telegramError) {
                 console.error('Failed to send Telegram welcome message:', telegramError);
             }
@@ -97,22 +84,15 @@ Looking forward to our journey together! 💪
 
 exports.login = async (req, res) => {
     try {
-        console.log('=== LOGIN REQUEST RECEIVED ===');
-        console.log('Headers:', req.headers);
-        console.log('Body:', req.body);
         
         const { email, password } = req.body;
         
-        console.log('Attempting login for email:', email);
         const result = await userRepository.loginUser({ email, password });
-        console.log('Login result:', { success: result.success, message: result.message });
         
         if (!result.success) {
-            console.log('Login failed:', result.message);
             return baseResponse(res, false, 401, result.message, null);
         }
         
-        console.log('Login successful for user:', result.user.username);
         const token = jwt.sign(
             { 
                 user_id: result.user.user_id,
@@ -126,9 +106,6 @@ exports.login = async (req, res) => {
             user: result.user
         });
     } catch (error) {
-        console.error('=== LOGIN ERROR ===');
-        console.error('Error details:', error);
-        console.error('Stack trace:', error.stack);
         return baseResponse(res, false, 500, 'Failed to login', null);
     }
 };

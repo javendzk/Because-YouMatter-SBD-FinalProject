@@ -20,10 +20,8 @@ exports.validateUserRegistration = (req, res, next) => {
     if (gender && !['male', 'female', 'others'].includes(gender)) {
         return baseResponse(res, false, 400, 'Gender must be one of: male, female, others', null);
     }
-      // Validate telegram_id if provided
     if (telegram_id !== undefined && telegram_id !== null) {
         if (isNaN(Number(telegram_id))) {
-            console.log('Telegram ID validation failed:', telegram_id, 'type:', typeof telegram_id);
             return baseResponse(res, false, 400, 'Telegram ID must be a number', null);
         }
     }
@@ -33,19 +31,12 @@ exports.validateUserRegistration = (req, res, next) => {
 
 
 exports.validateUserLogin = (req, res, next) => {
-    console.log('=== VALIDATOR: Validating login request ===');
-    console.log('Request body:', req.body);
-    
     const { email, password } = req.body;
     
     if (!email || !password) {
-        console.log('VALIDATOR ERROR: Email or password missing');
-        console.log('Email provided:', !!email);
-        console.log('Password provided:', !!password);
         return baseResponse(res, false, 400, 'Email and password are required', null);
     }
     
-    console.log('VALIDATOR: Login validation passed');
     next();
 };
 

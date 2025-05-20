@@ -5,7 +5,6 @@ const birthdayService = require('../services/birthday.service');
 
 const resetLoginStatusJob = () => {
     cron.schedule('0 0 * * *', async () => {
-        console.log('Running daily login reset job at midnight Jakarta time');
         const result = await cronService.resetDailyLogins();
         console.log('Reset daily login status result:', result);
     }, {

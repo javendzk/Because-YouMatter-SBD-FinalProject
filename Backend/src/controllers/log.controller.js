@@ -7,31 +7,23 @@ const telegramService = require('../services/telegram.service');
 const userRepository = require('../repositories/user.repository');
 const rewardRepository = require('../repositories/reward.repository');
 
-// Helper function to check and send streak milestone rewards
 const checkAndSendStreakReward = async (userId, streakCount) => {
     try {
-        // Check if we already sent a reward for this streak milestone
         const rewardAlreadySent = await telegramRepository.hasStreakRewardBeenSent(userId, streakCount);
         if (rewardAlreadySent) {
-            console.log(`[Reward] Streak ${streakCount} reward already sent to user ${userId}`);
             return;
         }
         
-        // Get user data and telegram ID
         const user = await userRepository.getUserById(userId);
         if (!user || !user.telegram_id) {
-            console.log(`[Reward] User ${userId} has no Telegram ID, cannot send reward`);
             return;
         }
         
-        // Get the appropriate reward for this streak
         const result = await rewardRepository.getStreakMilestoneReward(userId);
         if (!result || !result.isMultipleOf7) {
-            console.log(`[Reward] No valid reward found for user ${userId} with streak ${streakCount}`);
             return;
         }
         
-        // Prepare the reward message
         let message = `🎉 Congratulations ${user.username}! 🎉\n\n`;
         message += `You've achieved a ${streakCount}-day streak milestone! That's ${Math.floor(streakCount / 7)} weeks of consistency.\n\n`;
         
@@ -49,13 +41,11 @@ const checkAndSendStreakReward = async (userId, streakCount) => {
             await telegramService.sendTelegramMessage(user.telegram_id, message);
         }
         
-        // Log the message to prevent duplicate rewards
         await telegramRepository.createTelegramLog({
             userId,
             messageContent: message
         });
         
-        console.log(`[Reward] Streak ${streakCount} reward sent to user ${userId}`);
     } catch (error) {
         console.error('Error sending streak reward:', error);
     }
@@ -76,7 +66,6 @@ exports.createDailyLog = async (req, res) => {
         if (isNewLog) {
             const streakResult = await logRepository.updateUserStreak(userId);
             
-            // Check if the streak is a multiple of 7 and send reward if it is
             if (streakResult && streakResult.streak_counter % 7 === 0 && streakResult.streak_counter > 0) {
                 await checkAndSendStreakReward(userId, streakResult.streak_counter);
             }
@@ -278,5 +267,4 @@ exports.deleteLog = async (req, res) => {
     }
 };
 
-// Export checkAndSendStreakReward function so it can be used by other parts of the application
 exports.checkAndSendStreakReward = checkAndSendStreakReward;

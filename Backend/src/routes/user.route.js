@@ -7,11 +7,6 @@ const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/login', (req, res, next) => {
-    console.log('=== USER ROUTE: LOGIN REQUEST RECEIVED ===');
-    console.log('Method:', req.method);
-    console.log('URL:', req.originalUrl);
-    console.log('Body:', req.body);
-    console.log('Headers:', req.headers);
     next();
 }, validatorMiddleware.validateUserLogin, userController.login);
 router.post('/register', validatorMiddleware.validateUserRegistration, userController.register);

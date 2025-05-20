@@ -1,3 +1,7 @@
+// Let the backend handle creation vs update logic
+// Fix timezone issues for comparing dates
+// Add protection against multiple submissions
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -18,15 +22,13 @@ const Fill = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const [selectedMood, setSelectedMood] = useState('awesome');
-  const [moodDescription, setMoodDescription] = useState('');
+  const [selectedMood, setSelectedMood] = useState('awesome');  const [moodDescription, setMoodDescription] = useState('');
   const [animating, setAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [todayLog, setTodayLog] = useState(null);
-  
-  // Check if user is logged in and if we're in update mode
+    // Check if user is logged in and if we're in update mode
   useEffect(() => {
     if (!isAuthenticated) {
       console.log('Fill: User not authenticated, redirecting to signin');
@@ -42,23 +44,16 @@ const Fill = () => {
       // Fetch today's log to pre-fill the form
       const fetchTodayLog = async () => {
         try {
-          const logs = await logService.getUserLogs();
-          if (logs.success && logs.data && logs.data.length > 0) {
-            const options = { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' };
-            const jakartaDate = new Intl.DateTimeFormat('en-CA', options).format(new Date());
-            
-            // Find today's log
-            const todayLog = logs.data.find(log => {
-              const logDate = new Intl.DateTimeFormat('en-CA', options).format(new Date(log.date));
-              return logDate === jakartaDate;
-            });
-            
-            if (todayLog) {
-              console.log('Fill: Found today\'s log', todayLog);
-              setTodayLog(todayLog);
-              setSelectedMood(todayLog.mood || 'awesome');
-              setMoodDescription(todayLog.day_description || '');
-            }
+          console.log('Fill: Fetching today\'s log directly');
+          const todayLog = await logService.getTodayLog();
+          
+          if (todayLog) {
+            console.log('Fill: Found today\'s log', todayLog);
+            setTodayLog(todayLog);
+            setSelectedMood(todayLog.mood || 'awesome');
+            setMoodDescription(todayLog.day_description || '');
+          } else {
+            console.log('Fill: No log found for today, but staying in update mode');
           }
         } catch (err) {
           console.error('Error fetching today\'s log:', err);
@@ -106,32 +101,76 @@ const Fill = () => {
         }, 300);
       }, 150);
     }
-  };  const handleSubmitMood = async () => {
+  };
+  const handleSubmitMood = async () => {
     if (!isAuthenticated) {
       console.log('Fill: User not authenticated, redirecting to signin');
       navigate('/signin');
       return;
     }
     
-    // Prevent multiple submissions by disabling the button
+    // Strong protection against multiple submissions
     if (isLoading) {
+      console.log('Fill: Submission already in progress, ignoring duplicate request');
       return;
     }
     
+    // Set a submission lock
     setIsLoading(true);
     setError('');
     
     try {
-      // Submit the mood log
+      // Prepare log data
       const logData = {
         mood: selectedMood,
-        day_description: moodDescription || "" // Field name harus sesuai dengan yang diharapkan backend
+        day_description: moodDescription || ""
       };
       
-      console.log('Fill: Submitting daily log with data:', logData);
-      const response = await logService.createDailyLog(logData);
+      let response;
+      let todayLogObj = todayLog;
       
-      if (response.success) {
+      // If we don't have the log ID but we're in update mode, try to fetch it
+      if (!todayLogObj && isUpdateMode) {
+        console.log('Fill: Getting today\'s log for update');
+        todayLogObj = await logService.getTodayLog();
+      }
+      
+      // Check if we should update or create
+      if (isUpdateMode && todayLogObj && todayLogObj.log_id) {
+        // UPDATE: Use PUT request with the log ID
+        console.log(`Fill: Updating existing log with ID ${todayLogObj.log_id}`);
+        response = await logService.updateDailyLog(todayLogObj.log_id, logData);
+        console.log('Fill: Update response:', response);
+      } else {
+        // If not in update mode or no existing log found, check if the user has already logged today
+        if (!isUpdateMode) {
+          const hasLoggedToday = await logService.hasLoggedToday();
+          if (hasLoggedToday) {
+            // If user has already logged today but we're not in update mode,
+            // get the log and update it instead of creating a new one
+            console.log('Fill: Detected existing log for today, switching to update mode');
+            const existingLog = await logService.getTodayLog();
+            
+            if (existingLog && existingLog.log_id) {
+              console.log(`Fill: Updating existing log with ID ${existingLog.log_id}`);
+              response = await logService.updateDailyLog(existingLog.log_id, logData);
+            } else {
+              console.log('Fill: Could not find existing log, creating new one');
+              response = await logService.createDailyLog(logData);
+            }
+          } else {
+            // CREATE: Use POST request for new log
+            console.log('Fill: Creating new daily log');
+            response = await logService.createDailyLog(logData);
+          }
+        } else {
+          // CREATE: Use POST request for new log if we're somehow in update mode without a log ID
+          console.log('Fill: Creating new daily log (fallback)');
+          response = await logService.createDailyLog(logData);
+        }
+      }
+      
+      if (response && response.success) {
         // Send notification to Telegram with the latest mood entry
         try {
           console.log('Fill: Sending latest log to Telegram');
@@ -151,13 +190,14 @@ const Fill = () => {
           navigate('/welcoming', { 
             state: { 
               mood: selectedMood,
-              description: moodDescription 
+              description: moodDescription,
+              alreadySubmitted: true // Flag to prevent duplicate submission
             } 
           });
         }
       } else {
-        console.error('Fill: Failed to submit daily log:', response.message);
-        setError(response.message || 'Failed to submit mood. Please try again.');
+        console.error('Fill: Failed to submit daily log:', response ? response.message : 'No response');
+        setError(response ? response.message : 'Failed to submit mood. Please try again.');
       }
     } catch (err) {
       console.error('Error submitting mood:', err);
@@ -235,7 +275,8 @@ const Fill = () => {
           onClick={handleSubmitMood}
           disabled={isLoading}
           className="w-full bg-black text-white rounded-full py-4 font-medium text-lg transition-all duration-300 hover:bg-gray-800 active:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >          {isLoading ? (
+        >
+          {isLoading ? (
             <div className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

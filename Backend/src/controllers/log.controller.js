@@ -9,22 +9,18 @@ exports.createDailyLog = async (req, res) => {
         const userId = req.user.user_id;
         const { day_description, mood } = req.body;
         
-        // Let the repository handle the check and update/create logic
         const dailyLog = await logRepository.createDailyLog({
             userId,
             day_description,
             mood
         });
         
-        // Only update streak if this is a new log (not an update)
         const isNewLog = !await logRepository.hasPreviousDailyLogToday(userId, dailyLog.log_id);
         if (isNewLog) {
-            // Update streak counter after creating a new log
             await logRepository.updateUserStreak(userId);
         }
           const feedbackData = await llmService.generateFeedback(day_description, mood);
         
-        // Check if there's already an LLM response for this log and update it
         const existingResponse = await llmRepository.getResponseByLogId(dailyLog.log_id);
         
         if (existingResponse) {
@@ -49,6 +45,59 @@ exports.createDailyLog = async (req, res) => {
     } catch (error) {
         console.error('Create daily log controller error:', error);
         return baseResponse(res, false, 500, 'Failed to create daily log', null);
+    }
+};
+
+exports.updateDailyLog = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const logId = req.params.id;
+        const { day_description, mood } = req.body;
+        
+        const logCheck = await logRepository.getDailyLogById(logId);
+        if (!logCheck) {
+            return baseResponse(res, false, 404, 'Log not found', null);
+        }
+        
+        if (logCheck.user_id !== userId) {
+            return baseResponse(res, false, 403, 'Unauthorized to update this log', null);
+        }
+        
+        const updatedLog = await logRepository.updateDailyLog({
+            logId,
+            day_description,
+            mood
+        });
+        
+        if (!updatedLog) {
+            return baseResponse(res, false, 404, 'Failed to update log', null);
+        }
+        
+        const feedbackData = await llmService.generateFeedback(day_description, mood);
+        const existingResponse = await llmRepository.getResponseByLogId(logId);
+        
+        if (existingResponse) {
+            await llmRepository.updateResponse({
+                logId: logId,
+                message: feedbackData.message,
+                response: feedbackData.response,
+                tags: feedbackData.tags,
+                insight: feedbackData.insight
+            });
+        } else {
+            await llmRepository.createResponse({
+                logId: logId,
+                message: feedbackData.message,
+                response: feedbackData.response,
+                tags: feedbackData.tags,
+                insight: feedbackData.insight
+            });
+        }
+        
+        return baseResponse(res, true, 200, 'Daily log updated successfully', updatedLog);
+    } catch (error) {
+        console.error('Update daily log controller error:', error);
+        return baseResponse(res, false, 500, 'Failed to update daily log', null);
     }
 };
 

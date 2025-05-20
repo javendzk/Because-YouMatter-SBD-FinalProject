@@ -3,13 +3,16 @@ const db = require('../configs/pg.config');
 
 exports.resetDailyLoginStatus = async () => {
     try {
-        // Reset login status at midnight in Jakarta time
+
         const result = await db.query(
-            `UPDATE users SET logged_in_today = FALSE 
-             WHERE (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta') > 
-                   (last_login AT TIME ZONE 'Asia/Jakarta')::date`
+            `UPDATE users 
+             SET logged_in_today = FALSE 
+             WHERE logged_in_today = TRUE AND
+             (last_login AT TIME ZONE 'Asia/Jakarta')::date < 
+             (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
         );
 
+        console.log(`Reset logged_in_today status for ${result.rowCount} users`);
         return result.rowCount;
     } catch (error) {
         console.error('Error in resetDailyLoginStatus repository:', error);

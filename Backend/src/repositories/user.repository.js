@@ -1,5 +1,7 @@
 const db = require('../configs/pg.config');
 const bcrypt = require('bcrypt');
+const redis = require('../configs/redis.config');
+const { REDIS_TTL_USER } = process.env;
 
 
 exports.createUser = async ({ username, password, email, telegram_id, interest, gender, fullname, birthday }) => {
@@ -16,7 +18,6 @@ exports.createUser = async ({ username, password, email, telegram_id, interest, 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        // Default profile picture URL
         const defaultProfilePicture = 'https://i.imgur.com/zZz0JKY.jpeg';
 
         const result = await db.query(
@@ -61,16 +62,23 @@ exports.loginUser = async ({ email, password }) => {
             console.log('Repository: Invalid password for user:', email);
             return { success: false, message: 'Invalid email or password' };
         }
-        
-        console.log('Repository: Updating last login for user:', user.user_id);
+          console.log('Repository: Updating last login for user:', user.user_id);
         await db.query(
-            'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1',
+            'UPDATE users SET last_login = CURRENT_TIMESTAMP, logged_in_today = TRUE WHERE user_id = $1',
             [user.user_id]
         );
-          delete user.password;
-        console.log('Repository: Login successful for user:', user.user_id);
+        
+        const updatedUser = await db.query(
+            'SELECT user_id, username, email, telegram_id, interest, gender, fullname, birthday, user_image_url, last_login, streak_counter, logged_in_today FROM users WHERE user_id = $1',
+            [user.user_id]
+        );
+        
+        const userData = updatedUser.rows[0];
+        console.log('Repository: Login successful for user:', userData.user_id, 'logged_in_today:', userData.logged_in_today);
 
-        return { success: true, user };
+        await redis.delAsync(`user:${userData.user_id}`);
+
+        return { success: true, user: userData };
     } catch (error) {
         console.error('Repository ERROR in loginUser:', error);
         console.error('Repository ERROR stack:', error.stack);
@@ -81,6 +89,15 @@ exports.loginUser = async ({ email, password }) => {
 
 exports.getUserById = async (userId) => {
     try {
+        const cachedUser = await redis.getAsync(`user:${userId}`);
+        
+        if (cachedUser) {
+            console.log(`[Cache Hit] Retrieved user ${userId} from Redis cache`);
+            return JSON.parse(cachedUser);
+        }
+        
+        console.log(`[Cache Miss] User ${userId} not found in cache, fetching from database`);
+        
         const result = await db.query(
             'SELECT user_id, username, email, telegram_id, interest, gender, fullname, birthday, user_image_url, last_login, streak_counter FROM users WHERE user_id = $1',
             [userId]
@@ -89,8 +106,17 @@ exports.getUserById = async (userId) => {
         if (result.rows.length === 0) {
             return null;
         }
+        
+        const user = result.rows[0];
+        
+        await redis.setAsync(
+            `user:${userId}`,
+            JSON.stringify(user),
+            { EX: parseInt(REDIS_TTL_USER) || 3600 }
+        );
+        console.log(`[Cache Set] Stored user ${userId} in Redis cache`);
 
-        return result.rows[0];
+        return user;
     } catch (error) {
         console.error('Error in getUserById repository:', error);
         throw error;
@@ -166,13 +192,20 @@ exports.updateUserProfile = async (userId, { username, email, user_image_url, in
             WHERE user_id = $${paramCount} 
             RETURNING user_id, username, email, telegram_id, interest, gender, fullname, birthday, user_image_url, last_login, streak_counter`,
             values
-        );
-
-        if (result.rows.length === 0) {
+        );        if (result.rows.length === 0) {
             return null;
         }
         
-        return result.rows[0];
+        const updatedUser = result.rows[0];
+        
+        await redis.setAsync(
+            `user:${userId}`,
+            JSON.stringify(updatedUser),
+            { EX: parseInt(REDIS_TTL_USER) || 3600 } 
+        );
+        console.log(`[Cache Update] Updated user ${userId} in Redis cache`);
+        
+        return updatedUser;
     } catch (error) {
         console.error('Error in updateUserProfile repository:', error);
         throw error;

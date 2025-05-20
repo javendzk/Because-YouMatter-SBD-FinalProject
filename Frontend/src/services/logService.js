@@ -15,6 +15,66 @@ const logService = {  // Create a new daily log
     return response.data;
   },
 
+  // Update an existing log by ID
+  updateDailyLog: async (logId, logData) => {
+    // Pastikan data memiliki format yang diharapkan oleh backend
+    const formattedData = {
+      mood: logData.mood,
+      day_description: logData.day_description || "" // Pastikan day_description ada
+    };
+    
+    console.log(`LOG SERVICE: Updating daily log ID ${logId} with data:`, formattedData);
+    const response = await apiClient.put(`/logs/${logId}`, formattedData);
+    return response.data;
+  },
+
+  // Get today's log (helper function)
+  getTodayLog: async () => {
+    try {
+      const response = await apiClient.get('/logs');
+      console.log('LOG SERVICE: Getting today\'s log');
+      
+      if (response.data.success && response.data.data && response.data.data.length > 0) {
+        // Get all logs
+        const logs = response.data.data;
+        
+        // Get today's date in Jakarta timezone (GMT+7)
+        const today = new Date();
+        const jakartaOffset = 7 * 60; // Jakarta is GMT+7 (7 hours = 420 minutes)
+        const userOffset = today.getTimezoneOffset(); // User's timezone offset in minutes
+        const jakartaTime = new Date(today.getTime() + (jakartaOffset + userOffset) * 60000);
+        const jakartaDateString = jakartaTime.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        // Find today's log by comparing dates
+        for (const log of logs) {
+          // First, check if we have the pre-formatted date from backend
+          if (log.date_formatted && log.date_formatted === jakartaDateString) {
+            console.log('LOG SERVICE: Found today\'s log with ID:', log.log_id);
+            return log;
+          }
+          
+          // Fallback to manual date conversion if date_formatted is not available
+          if (log.date) {
+            const logDate = new Date(log.date);
+            const logDateJakarta = new Date(logDate.getTime() + (jakartaOffset + userOffset) * 60000);
+            const logDateString = logDateJakarta.toISOString().split('T')[0];
+            
+            if (logDateString === jakartaDateString) {
+              console.log('LOG SERVICE: Found today\'s log with ID:', log.log_id);
+              return log;
+            }
+          }
+        }
+      }
+      
+      console.log('LOG SERVICE: No log found for today');
+      return null;
+    } catch (error) {
+      console.error('Error getting today\'s log:', error);
+      return null;
+    }
+  },
+
   // Get all user logs
   getUserLogs: async () => {
     const response = await apiClient.get('/logs');
@@ -36,32 +96,53 @@ const logService = {  // Create a new daily log
     try {
       const response = await apiClient.get('/logs');
       console.log('LOG SERVICE: Checking if user has logged today');
+      console.log('LOG SERVICE: Response status:', response.data.success);
+      console.log('LOG SERVICE: Logs count:', response.data.data ? response.data.data.length : 0);
       
       if (response.data.success && response.data.data && response.data.data.length > 0) {
-        // Get the logs
+        // Get the most recent log
         const logs = response.data.data;
         
-        // Get today's date in Asia/Jakarta (GMT+7) timezone
-        const options = { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' };
-        const jakartaDate = new Intl.DateTimeFormat('en-CA', options).format(new Date());
-        console.log('LOG SERVICE: Today (Jakarta time):', jakartaDate);
+        // Sort logs by date (newest first)
+        const sortedLogs = [...logs].sort((a, b) => {
+          return new Date(b.date) - new Date(a.date);
+        });
+          // Get today's date in Jakarta timezone (GMT+7)
+        const today = new Date();
+        const jakartaOffset = 7 * 60; // Jakarta is GMT+7 (7 hours = 420 minutes)
+        const userOffset = today.getTimezoneOffset(); // User's timezone offset in minutes
+        const jakartaTime = new Date(today.getTime() + (jakartaOffset + userOffset) * 60000);
+        const jakartaDateString = jakartaTime.toISOString().split('T')[0]; // YYYY-MM-DD
         
-        // Check if any log is from today
-        for (const log of logs) {
-          if (!log.date) continue;
-          
-          const logDateObj = new Date(log.date);
-          const logDate = new Intl.DateTimeFormat('en-CA', options).format(logDateObj);
-          console.log('LOG SERVICE: Comparing log date:', logDate);
-          
-          if (logDate === jakartaDate) {
-            console.log('LOG SERVICE: Found a log for today');
-            return true;
-          }
+        // Compare with the most recent log's date
+        const latestLog = sortedLogs[0];
+        console.log('LOG SERVICE: Latest log data:', latestLog);
+        
+        // First, check if we have the pre-formatted date from backend
+        if (latestLog.date_formatted) {
+          console.log('LOG SERVICE: Using pre-formatted date from backend:', latestLog.date_formatted);
+          return latestLog.date_formatted === jakartaDateString;
         }
+        
+        if (!latestLog.date) {
+          console.log('LOG SERVICE: Latest log does not have date field');
+          return false;
+        }
+        
+        // Convert log date to Jakarta timezone for consistent comparison
+        const logDate = new Date(latestLog.date);
+        // Account for timezone differences by using ISO date string (YYYY-MM-DD)
+        const logDateJakarta = new Date(logDate.getTime() + (jakartaOffset + userOffset) * 60000);
+        const logDateString = logDateJakarta.toISOString().split('T')[0];
+        
+        console.log('LOG SERVICE: Today (Jakarta time):', jakartaDateString);
+        console.log('LOG SERVICE: Latest log date (Jakarta time):', logDateString);
+        console.log('LOG SERVICE: Do dates match?', logDateString === jakartaDateString);
+        
+        return logDateString === jakartaDateString;
       }
       
-      console.log('LOG SERVICE: No logs found for today');
+      console.log('LOG SERVICE: No logs found or request unsuccessful');
       return false;
     } catch (error) {
       console.error('Error checking if user has logged today:', error);
@@ -133,5 +214,6 @@ const logService = {  // Create a new daily log
     }
   }
 };
+
 
 export default logService;

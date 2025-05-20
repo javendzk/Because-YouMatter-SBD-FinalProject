@@ -7,6 +7,7 @@ const validatorMiddleware = require('../middlewares/validator.middleware');
 router.use(authMiddleware.verifyToken);
 
 router.post('/', validatorMiddleware.validateDailyLog, logController.createDailyLog);
+router.put('/:id', validatorMiddleware.validateDailyLog, logController.updateDailyLog);
 router.get('/', logController.getUserLogs);
 router.get('/:id', logController.getLogById);
 router.delete('/:id', logController.deleteLog);

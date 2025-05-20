@@ -46,7 +46,8 @@ const Welcoming = () => {
                 return;
             }
 
-            try {                // Debug: Get and log user profile data
+            try {
+                // Debug: Get and log user profile data
                 console.log('Welcoming: Getting user profile for debugging');
                 const userProfile = await userService.getProfile();
                 console.log('Welcoming: User profile data:', userProfile.data);
@@ -74,32 +75,19 @@ const Welcoming = () => {
                     setIsNewUser(isFirstTime);
                 }
                 
-                // If we have mood data, submit the log
-                if (location.state?.mood) {
-                    await submitMoodLog();
-                }
+                // IMPORTANT: Do NOT submit a new log here - we expect the log
+                // to already be submitted from the Fill page
+                console.log('Welcoming: Log submission handled by Fill page, skipping submission here');
+                
             } catch (error) {
                 console.error('Error checking user status:', error);
             } finally {
                 setIsLoading(false);
             }
         };
-          const submitMoodLog = async () => {
-            try {
-                // Submit the mood log to the backend
-                console.log('Welcoming: Submitting mood log');
-                await logService.createDailyLog({
-                    mood: mood,
-                    day_description: moodDescription || "" // Gunakan nama field yang benar
-                });
-                console.log('Welcoming: Mood log submitted successfully');
-            } catch (error) {
-                console.error('Error submitting mood log:', error);
-            }
-        };
 
         checkUserStatus();
-    }, [navigate, isAuthenticated, mood, moodDescription, location.state]);    // Simulate loading process
+    }, [navigate, isAuthenticated, mood, moodDescription, location.state]);// Simulate loading process
     useEffect(() => {
         if (isLoading) return;
         

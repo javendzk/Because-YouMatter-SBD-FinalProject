@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const corsConfig = require('./src/configs/cors.config');
 const pgConfig = require('./src/configs/pg.config');
+const redis = require('./src/configs/redis.config');
 require('dotenv').config();
 
 
@@ -13,18 +14,10 @@ const rewardRoutes = require('./src/routes/reward.route');
 const cronJobs = require('./src/crons/cron.jobs');
 
 pgConfig.connect();
+redis.connectRedis();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Add CORS middleware with debugging
-app.use((req, res, next) => {
-    console.log(`=== CORS Debug ===`);
-    console.log(`Request from: ${req.headers.origin || 'Unknown origin'}`);
-    console.log(`Request method: ${req.method}`);
-    console.log(`Request path: ${req.path}`);
-    next();
-});
 
 app.use(cors(corsConfig));
 app.use(express.urlencoded({ extended: true }));

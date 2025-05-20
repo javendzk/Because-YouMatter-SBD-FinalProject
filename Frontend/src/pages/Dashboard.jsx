@@ -1,4 +1,3 @@
-// Dashboard.jsx - Updated with backend integration
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Edit, ChevronDown, Calendar, X, Pencil, Filter, RefreshCcw } from "lucide-react";
@@ -10,7 +9,6 @@ import { useAuth } from "../context/AuthContext";
 import logService from "../services/logService";
 import rewardService from "../services/rewardService";
 
-// Mood color constants based on design
 const MOOD_COLORS = {
     awesome: "#FDDD6F", // Yellow
     good: "#46CD87",    // Green
@@ -19,12 +17,11 @@ const MOOD_COLORS = {
     terrible: "#9FC0FF"  // Light Blue
 };
 
-export default function Dashboard() {    // Import React hooks at the top    const location = useLocation();
+export default function Dashboard() {    
     const navigate = useNavigate();
     const { user, isAuthenticated, logout, updateProfile, updateProfileWithImage } = useAuth();
     const todayMood = location.state?.mood || null;
     
-    // Helper state for month/year selection
     const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());    const [showProfileEdit, setShowProfileEdit] = useState(false);
     const [profileImage, setProfileImage] = useState(null);
@@ -39,22 +36,18 @@ export default function Dashboard() {    // Import React hooks at the top    con
         user_image_url: ""
     });
     
-    // New state for success message
     const [successMessage, setSuccessMessage] = useState(null);
     
-    // Helper function to convert month name to month number (0-11)
     const getMonthNumber = (monthName) => {
         return new Date(Date.parse(`${monthName} 1, 2000`)).getMonth();
     };
     
-    // Compute days in selected month
     const daysInSelectedMonth = new Date(
         parseInt(selectedYear),
         getMonthNumber(selectedMonth) + 1,
         0
     ).getDate();
     
-    // Compute first day of the month (0 = Sunday, 1 = Monday, etc.)
     const firstDayOfSelectedMonth = new Date(
         parseInt(selectedYear),
         getMonthNumber(selectedMonth),
@@ -88,35 +81,28 @@ export default function Dashboard() {    // Import React hooks at the top    con
     const [selectedMood, setSelectedMood] = useState(null);
     const [editText, setEditText] = useState('');
 
-    // Prepare weekly mood data for the chart
     const weeklyMoodData = [5, 7, 4, 8, 6, 9, 7];
-    const maxMoodValue = Math.max(...weeklyMoodData);    // Check if user is authenticated
+    const maxMoodValue = Math.max(...weeklyMoodData);    
     useEffect(() => {
         if (!isAuthenticated) {
-            console.log('Dashboard: User not authenticated, redirecting to signin');
             navigate('/signin');
             return;
         }
 
         fetchUserData();
         fetchMoodHistory();
-    }, [isAuthenticated, navigate]);// Fetch user data from backend
+    }, [isAuthenticated, navigate]);
     const fetchUserData = async () => {
         try {
-            console.log('=== FETCHING USER DATA ===');
             setIsLoading(true);
             
-            // Set basic user data from auth context
             if (user) {
-                console.log('User data from auth context:', user);
-                // Calculate age from birthday if available
                 let age = "";
                 if (user.birthday) {
                     const birthDate = new Date(user.birthday);
                     const today = new Date();
                     age = today.getFullYear() - birthDate.getFullYear();
                     
-                    // Adjust age if birthday hasn't occurred yet this year
                     const m = today.getMonth() - birthDate.getMonth();
                     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
                         age--;
@@ -136,23 +122,16 @@ export default function Dashboard() {    // Import React hooks at the top    con
                 }));
             }
             
-            // Get streak information
-            console.log('Fetching streak information...');
             const streakResponse = await rewardService.getUserStreak();
-            console.log('Streak response:', streakResponse);
             
             if (streakResponse.success) {
-                console.log('Setting streak days:', streakResponse.data.currentStreak);
                 setUserData(prev => ({
                     ...prev,
                     streakDays: streakResponse.data.currentStreak || 0
                 }));
             }
             
-            // Get mood statistics
-            console.log('Fetching mood statistics...');
             const statsResponse = await logService.calculateUserStats();
-            console.log('Stats response:', statsResponse);
             
             setUserData(prev => ({
                 ...prev,
@@ -161,20 +140,13 @@ export default function Dashboard() {    // Import React hooks at the top    con
                 stressedDays: statsResponse.data?.stressedDays || 0
             }));
             
-            console.log('User data updated:', userData);
             
         } catch (err) {
-            console.error("Error fetching user data:", err);
-            console.error("Error details:", {
-                name: err.name,
-                message: err.message,
-                stack: err.stack
-            });
             setError("Failed to load user data. Please try again.");
         } finally {
             setIsLoading(false);
         }
-    };    // Initialize editedProfile with userData when it's loaded or updated
+    };   
     useEffect(() => {
         if (user) {
             setEditedProfile({
@@ -188,7 +160,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
             });
         }
     }, [user]);
-      // Update editedProfile when showProfileEdit changes and userData is available
     useEffect(() => {
         if (showProfileEdit && userData) {
             setEditedProfile({
@@ -203,59 +174,45 @@ export default function Dashboard() {    // Import React hooks at the top    con
         }
     }, [showProfileEdit, userData]);
 
-    // Fetch mood history
     const fetchMoodHistory = async () => {
         try {
             const response = await logService.getUserLogs();
             
             if (response.success) {
-                // Transform logs data to match the expected format for MoodHistoryTimeline
                 const formattedLogs = response.data.map(log => {
                     const date = new Date(log.date);
                     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                     
-                    // Format date components
                     const day = date.getDate();
                     const month = months[date.getMonth()].substring(0, 3);
                     const weekday = weekdays[date.getDay()];
-                      // Format mood
                     const moodFormatted = log.mood.charAt(0).toUpperCase() + log.mood.slice(1);
                     
-                    // Check if the log date is today
                     const today = new Date();
                     const isToday = date.toDateString() === today.toDateString();
-                      // Extract tags directly from the log
-                    console.log("Log data:", log);
-                      // Extract tags and insights properly
                     const tags = log.tags || [];
-                    // Debugging
-                    console.log(`Log ${log.log_id} tags:`, tags);
-                    console.log(`Log ${log.log_id} insight:`, log.insight);
-                    console.log(`Log ${log.log_id} llm_response:`, log.llm_response);
                       return {
                         id: log.log_id,
                         day,
                         month,
                         weekday,
-                        mood: moodFormatted,color: MOOD_COLORS[log.mood] || "#46CD87", // Default to green if mood color not found
+                        mood: moodFormatted,color: MOOD_COLORS[log.mood] || "#46CD87", 
                         imageSrc: `/src/assets/emotions/${moodFormatted}.png`,                        description: log.day_description || "No description provided.",
                         tags: Array.isArray(tags) ? tags : [], 
                         ai_insight: log.insight || "AI insight not available yet.",
                         web_message: log.llm_response?.webMessage || "AI is analyzing your mood pattern. Check back soon for insights!",
                         isToday,
-                        date: log.date // Include date for calendar functionality
+                        date: log.date 
                     };
                 });
                   setMoodHistory(formattedLogs);
-                console.log("Formatted mood history logs:", formattedLogs);
             }
         } catch (err) {
             console.error("Error fetching mood history:", err);
             setError("Failed to load mood history. Please try again.");
         }
     };
-    // Handle log deletion
     const handleDeleteLog = async (logId) => {
         setIsDeleting(true);
         setDeleteLogId(logId);
@@ -264,10 +221,8 @@ export default function Dashboard() {    // Import React hooks at the top    con
             const response = await logService.deleteLog(logId);
             
             if (response.success) {
-                // Remove the deleted log from state
                 setMoodHistory(prev => prev.filter(log => log.id !== logId));
                 
-                // Update user stats after deletion
                 fetchUserData();
             } else {
                 setError("Failed to delete log. Please try again.");
@@ -281,20 +236,16 @@ export default function Dashboard() {    // Import React hooks at the top    con
         }
     };
 
-    // Update mood history if we have today's mood from the welcoming page
     useEffect(() => {
         if (todayMood) {
-            fetchMoodHistory(); // Refresh the mood history
+            fetchMoodHistory();
         }
     }, [todayMood]);
     
-    // Function to handle updating mood    
     const handleUpdateMood = () => {
-        // Navigate to Fill page with query parameter to indicate update mode
         navigate('/fill', { state: { isUpdateMode: true } });
     };
 
-    // Add a handler for saving edited mood
     const handleSaveEdit = async () => {
         if (!selectedMood || !selectedMood.logId) {
             console.error("Cannot save edit: No selected mood or log ID");
@@ -303,11 +254,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
         }
         
         try {
-            console.log(`Updating log with ID ${selectedMood.logId}`);
-            // You would typically call your API here to update the log
-            // const response = await logService.updateLog(selectedMood.logId, { description: editText });
-            
-            // For now, just close the modal and refresh data
             setSelectedMood(null);
             setEditText('');
             fetchMoodHistory();
@@ -315,7 +261,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
             console.error("Error updating mood:", error);
             setError("Failed to update mood. Please try again.");
         }
-    };    // Handle profile image changes
+    };   
     const handleProfileImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -328,34 +274,24 @@ export default function Dashboard() {    // Import React hooks at the top    con
         }
     };
 
-    // Add handler for calendar day clicks - view only, no editing
     const handleCalendarClick = (day) => {
-        // Find the mood for the selected day, if any
         const selectedDate = new Date(selectedYear, getMonthNumber(selectedMonth), day);
         const formattedDate = selectedDate.toISOString().split('T')[0];
         
-        // Find if there's a log for this date
         const moodForDay = moodHistory.find(mood => {
             return new Date(mood.date).toISOString().split('T')[0] === formattedDate;
         });
         
         if (moodForDay) {
-            // Just log info about the mood, no longer setting it for edit
-            console.log(`Mood for ${formattedDate}: ${moodForDay.mood} - ${moodForDay.description}`);
-            // We can optionally add a toast or alert to show the mood details
             alert(`${moodForDay.mood.charAt(0).toUpperCase() + moodForDay.mood.slice(1)}: ${moodForDay.description}`);
-        } else {
-            console.log(`No mood logged for ${formattedDate}`);
-        }
-    };    // Handle profile save
+        } 
+    };  
     const handleProfileSave = async () => {
         try {
             setIsLoading(true);
             setError(null);
             setSuccessMessage(null);
-            console.log('Saving profile data:', editedProfile);
             
-            // Prepare data for API
             const profileData = {
                 fullname: editedProfile.fullName,
                 username: editedProfile.username,
@@ -365,13 +301,10 @@ export default function Dashboard() {    // Import React hooks at the top    con
                 interest: editedProfile.hobbies
             };
             
-            // Use the updateProfileWithImage function to handle both profile data and image
             const result = await updateProfileWithImage(profileData, profileImage);
             
             if (result.success) {
-                console.log('Profile updated successfully:', result.data);
                 
-                // Update local state with the returned data
                 setUserData(prev => ({
                     ...prev,
                     fullName: result.data.fullname || editedProfile.fullName,
@@ -382,24 +315,17 @@ export default function Dashboard() {    // Import React hooks at the top    con
                     hobbies: result.data.interest || editedProfile.hobbies,
                     profilePicture: result.data.user_image_url || result.data.profilePicture || prev.profilePicture
                 }));
-                  // Reset image states
                 setProfileImage(null);
                 setProfileImagePreview(null);
-                
-                // Set success message
                 setSuccessMessage('Profile updated successfully!');
                 
-                // Close modal after a short delay to show success message
                 setTimeout(() => {
                     setShowProfileEdit(false);
-                    // Clear success message after modal is closed
                     setTimeout(() => setSuccessMessage(null), 500);
                 }, 1500);
                 
-                // Set success message
                 setSuccessMessage("Profile updated successfully!");
                 
-                // Clear success message after 3 seconds
                 setTimeout(() => {
                     setSuccessMessage(null);
                 }, 3000);
@@ -414,7 +340,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
         }
     };
     
-    // Page transitions
     const pageVariants = {
         initial: {
             opacity: 0,
@@ -435,7 +360,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
         }
     };
 
-    // Loading state
     if (isLoading) {
         return (
             <div className="min-h-screen bg-indigo-50 flex items-center justify-center">
@@ -447,7 +371,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
         );
     }
 
-    // Dummy data for today's mood preview section if needed
     const day = new Date().getDate();
     const currentDate = new Date();
     const formatDate = (date) => {
@@ -457,7 +380,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
             day: 'numeric'
         });
     };
-      // Get today's mood from mood history if available
+
     const getTodaysMood = () => {
         const today = new Date().toDateString();
         const todayEntry = moodHistory.find(entry => new Date(entry.date).toDateString() === today);
@@ -472,7 +395,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
             };
         }
         
-        // Default mood if no entry for today
         return {
             mood: todayMood || 'good',
             color: todayMood ? MOOD_COLORS[todayMood] : MOOD_COLORS.good,
@@ -483,10 +405,9 @@ export default function Dashboard() {    // Import React hooks at the top    con
             web_message: "Log your mood to get AI suggestions!"
         };
     };
-      // Get the current mood
+
     const currentMood = getTodaysMood();
 
-    // Helper function for web messages
     const getWebMessageForMood = (mood) => {
         if (mood === 'awesome') {
             return "Keep up the positive energy! Your excellent mood is a great foundation for your day.";
@@ -513,7 +434,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
         >
             <Navbar userData={userData} />
 
-            {/* Calendar Overlay */}<AnimatePresence>
+            <AnimatePresence>
                 {showCalendar && (
                     <motion.div
                         className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
@@ -536,7 +457,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                 <X size={20} />
                             </motion.button>                            <h2 className="text-lg font-bold text-indigo-900 mb-2">Mood Calendar</h2>
 
-                            {/* Month and Year selector */}                            <div className="flex justify-between items-center mb-4">
+                                <div className="flex justify-between items-center mb-4">
                                 <div className="relative">
                                     <select
                                         className="appearance-none bg-blue-50 border border-blue-100 text-indigo-700 py-1.5 px-3 pr-8 rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -574,7 +495,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                 </div>
                             </div>
 
-                            {/* Weekday headers */}
                             <div className="grid grid-cols-7 gap-1 sm:gap-3 text-center text-xs font-medium text-indigo-600 mb-2">
                                 <div>Sun</div>
                                 <div>Mon</div>
@@ -585,12 +505,10 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                 <div>Sat</div>
                             </div>
                             <div className="grid grid-cols-7 gap-1 sm:gap-3 text-center text-sm">
-                                {/* Spacers for the first day offset */}
                                 {Array.from({ length: firstDayOfSelectedMonth }).map((_, i) => (
                                     <div key={`empty-${i}`} className="w-10 h-10 sm:w-12 sm:h-12"></div>
                                 ))}
 
-                                {/* Days of the month */}
                                 {Array.from({ length: daysInSelectedMonth }).map((_, i) => {
                                     const day = i + 1;
                                     const mood = moodHistory.find((m) => m.day === day && m.month === selectedMonth);
@@ -630,7 +548,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
                         </motion.div>
                     </motion.div>
                 )}
-            </AnimatePresence>            {/* Mood Edit Modal */}
+            </AnimatePresence>           
             <AnimatePresence>
                 {selectedMood && (
                     <motion.div
@@ -676,7 +594,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                     </motion.div>
                 )}            </AnimatePresence>
 
-            {/* Profile Edit Modal */}
             <AnimatePresence>
                 {showProfileEdit && (
                     <motion.div
@@ -695,7 +612,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                         >
                             <h3 className="text-lg font-bold text-indigo-900 mb-4">Edit Your Profile</h3>
 
-                            {/* Profile Image Upload */}
                             <div className="mb-6 flex flex-col items-center">
                                 <div className="relative w-24 h-24 mb-3">
                                     <img 
@@ -766,7 +682,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                             type="date"
                                             value={editedProfile.birthday}
                                             onChange={(e) => {
-                                                // Calculate new age based on birthday
                                                 const dob = new Date(e.target.value);
                                                 const today = new Date();
                                                 let age = today.getFullYear() - dob.getFullYear();
@@ -782,7 +697,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                                 });
                                             }}
                                             className="w-full p-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                                            max={new Date().toISOString().split('T')[0]} 
                                         />
                                     </div>
 
@@ -863,9 +778,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
                 )}
             </AnimatePresence>
 
-            {/* Main Content with Proper Mobile Padding */}
             <div className="pt-20 px-4 sm:px-8 md:px-16 pb-10">
-                {/* User profile section with responsive layout */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8">
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
@@ -918,7 +831,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.4, delay: 0.3 }}
                     >
-                        {/* Streak card */}
                         <div className="bg-white rounded-xl shadow-sm p-4 w-full sm:w-auto flex items-center gap-3">
                             <div className="relative">
                                 <div className="flame-container">
@@ -934,7 +846,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                             </div>
                         </div>
 
-                        {/* Calendar button */}
                         <motion.button
                             className="w-full sm:w-auto bg-white rounded-xl shadow-sm p-3 px-4 flex items-center justify-center gap-2"
                             whileHover={{ scale: 1.05 }}
@@ -947,7 +858,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                     </motion.div>
                 </div>
 
-                {/* User stats grid with responsive design */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 mb-8">
                     <motion.div
                         className="bg-white rounded-xl shadow-sm p-4 flex flex-col items-center"
@@ -991,18 +901,15 @@ export default function Dashboard() {    // Import React hooks at the top    con
                         <div className="text-xs sm:text-sm text-gray-500 mt-1">Good Days %</div>
                     </motion.div>
                 </div>
-
-                {/* Mood Timeline header - more mobile friendly */}                <div className="mb-4">
+                <div className="mb-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-lg sm:text-xl font-bold text-indigo-900">Your Mood Timeline</h2>
                     </div>
                 </div>
 
-                {/* Main Section */}
                 <main className="max-w-6xl mx-auto py-10 px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column */}
                     <section className="space-y-6">
-                        {/* Mood Today Card */}                    <div className="bg-white rounded-3xl shadow-md p-6 text-center">                            <h2 className="text-3xl font-bold text-indigo-900 mb-1">Day {day}!</h2>
+                        <div className="bg-white rounded-3xl shadow-md p-6 text-center">                            <h2 className="text-3xl font-bold text-indigo-900 mb-1">Day {day}!</h2>
                             <p className="text-sm text-gray-500 mb-4">May 2025</p><motion.div
                                 className="mx-auto w-40 h-40 rounded-full overflow-hidden"
                                 style={{ backgroundColor: currentMood.color }}
@@ -1026,7 +933,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                 {currentMood.web_message}
                             </div>
                             
-                            {/* Add button to update today's mood */}
                             <motion.button
                                 className="mt-4 px-4 py-2 bg-indigo-600 rounded-full text-white text-sm hover:bg-indigo-700 flex items-center gap-1 mx-auto"
                                 whileHover={{ scale: 1.05 }}
@@ -1035,7 +941,8 @@ export default function Dashboard() {    // Import React hooks at the top    con
                             >
                                 <RefreshCcw size={16} /> Update Today's Mood
                             </motion.button>
-                        </div>                    {/* Profile Section */}                    <div className="bg-white rounded-3xl shadow-md p-6">
+                        </div>                   
+                        <div className="bg-white rounded-3xl shadow-md p-6">
                             <h3 className="text-lg font-bold text-indigo-900 mb-4">Your Profile</h3>
                             <div className="flex items-start gap-4">
                                 <motion.img
@@ -1060,7 +967,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                     </div>
                                     <p className="text-xs text-gray-500">Born on {userData.birthday ? new Date(userData.birthday).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</p>
                                 </div>
-                            </div>                            {/* Hobbies Section */}
+                            </div>                          
                             <div className="mt-4 bg-indigo-50 p-3 rounded-lg">
                                 <h4 className="text-xs font-semibold text-indigo-700 mb-1">Hobbies & Interests</h4>
                                 <p className="text-xs text-gray-600">{userData.interest}</p>
@@ -1085,9 +992,8 @@ export default function Dashboard() {    // Import React hooks at the top    con
                         </div>
                     </section>
                     
-                    {/* Right Column */}
                     <section className="lg:col-span-2 space-y-6">
-                        {/* Mood History Section */}<MoodHistoryTimeline
+                        <MoodHistoryTimeline
                             moodHistoryData={moodHistory}
                             onCalendarOpen={() => setShowCalendar(true)}
                             onDeleteLog={handleDeleteLog}
@@ -1095,8 +1001,7 @@ export default function Dashboard() {    // Import React hooks at the top    con
                             deleteLogId={deleteLogId}
                         />
 
-                        {/* Weekly Mood Tracker */}                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                        
-                            {/* Weekly Mood Overview Card */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                        
                             <div className="bg-white rounded-3xl shadow-md p-6">
                                 <h4 className="text-center text-indigo-900 font-semibold mb-4">Weekly Mood Overview</h4>
                                 <div className="flex justify-around text-center mb-4">
@@ -1138,7 +1043,6 @@ export default function Dashboard() {    // Import React hooks at the top    con
                                 </div>
                             </div>
                             
-                            {/* Streak Card */}
                             <div className="bg-white rounded-3xl shadow-md p-6 text-center">
                                 <h4 className="text-center text-indigo-900 font-semibold mb-3">Your Current Streak</h4>
                                 <motion.div

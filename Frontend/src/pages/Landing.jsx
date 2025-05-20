@@ -1,4 +1,3 @@
-// Modified Landing component with fixed footer
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,24 +10,20 @@ const Landing = () => {
   const [mood, setMood] = useState("Awesome");
   const sliderRef = useRef(null);
 
-  // Mock images for demo purposes
   const mockImages = {
     logo: "/src/assets/logo.png",
     macbook: "/api/placeholder/800/500",
     moodImage: "/api/placeholder/300/300",
     emotionsImage: "/api/placeholder/400/320"
   };
-  // Mock user data (not logged in)
   const userData = {
     loggedIn: false
   };
 
-  // Development function for easy dashboard access
   const accessDashboard = () => {
     navigate('/dashboard');
   };
 
-  // Page transitions
   const pageVariants = {
     initial: {
       opacity: 0,
@@ -50,7 +45,6 @@ const Landing = () => {
     }
   };
 
-  // Slide transitions
   const slideVariants = {
     enter: (direction) => ({
       x: direction > 0 ? 500 : -500,
@@ -116,7 +110,6 @@ const Landing = () => {
     const currentX = e.touches[0].clientX;
     const diff = startX - currentX;
 
-    // Prevent default to stop page scrolling
     if (Math.abs(diff) > 5) {
       e.preventDefault();
     }
@@ -128,7 +121,6 @@ const Landing = () => {
     const endX = e.changedTouches[0].clientX;
     const diff = startX - endX;
 
-    // Swipe threshold
     if (diff > 50 && currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else if (diff < -50 && currentSlide > 0) {
@@ -148,7 +140,6 @@ const Landing = () => {
     const endX = e.clientX;
     const diff = startX - endX;
 
-    // Swipe threshold
     if (diff > 50 && currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else if (diff < -50 && currentSlide > 0) {
@@ -178,7 +169,6 @@ const Landing = () => {
     };
   }, [currentSlide, startX]);
 
-  // Mood options
   const moods = [
     { name: "Awesome", emoji: "😊", color: "bg-yellow-300" },
     { name: "Good", emoji: "🙂", color: "bg-green-300" },
@@ -195,22 +185,18 @@ const Landing = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      // Navigate to dashboard instead of showing alert
       navigate('/dashboard');
     }
   };
 
   const handleSkip = () => {
-    // Navigate to fill page to input mood first when skipping the onboarding
     navigate('/signin');
   };
 
   const handleSignIn = () => {
-    // Navigate to sign in page or open sign in modal
     navigate('/signin');
   };
 
-  // Mood selection component with animation
   const MoodSelector = () => (
     <motion.div
       className="flex flex-col items-center justify-center rounded-lg w-full h-full overflow-hidden"
@@ -226,7 +212,6 @@ const Landing = () => {
     </motion.div>
   );
 
-  // Dashboard preview component with animation
   const DashboardPreview = () => (
     <motion.div
       className="flex flex-col items-center justify-center bg-blue-50 p-3 rounded-lg w-full h-full overflow-hidden"
@@ -282,7 +267,6 @@ const Landing = () => {
     </motion.div>
   );
 
-  // Streak preview component with animation
   const StreakPreview = () => (
     <motion.div
       className="flex flex-col items-center justify-center bg-blue-50 p-3 rounded-lg w-full h-full overflow-hidden"
@@ -328,7 +312,6 @@ const Landing = () => {
     </motion.div>
   );  
   
-  // Emotions group component for final slide with animation
   const EmotionsGroup = () => (
     <motion.div
       className="flex flex-col items-center justify-center w-full h-full overflow-hidden"
@@ -345,7 +328,6 @@ const Landing = () => {
     </motion.div>
   );
 
-  // Function to render the appropriate content based on current slide
   const renderSlideContent = () => {
     switch (currentSlide) {
       case 0:
@@ -369,28 +351,20 @@ const Landing = () => {
       exit="exit"
       variants={pageVariants}
     >
-      {/* Using the common Navbar component */}
       <Navbar userData={userData} />
 
-      {/* Content Area */}
       <main className="py-2 px-2 sm:py-4 sm:px-4 pt-20 flex-grow pb-8" ref={sliderRef}>
-        {/* Device Frame */}
         <div className="max-w-4xl mx-auto">
-          {/* Laptop Mockup Frame */}
           <motion.div
             className="relative w-full aspect-video bg-gray-900 rounded-lg flex items-center justify-center p-2 sm:p-4 md:p-6 shadow-xl"
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            {/* Laptop Top Part */}
             <div className="w-full h-full bg-gray-800 rounded-lg overflow-hidden flex flex-col relative">
-              {/* Camera Notch */}
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-16 sm:w-32 h-4 sm:h-6 bg-black rounded-b-lg z-10"></div>
 
-              {/* Screen Content Area */}
               <div className="w-full h-full bg-[#F5F9FF] p-1 flex flex-col items-center justify-center">
-                {/* This is where the slide content displays properly inside the MacBook */}
                 <div className="w-full h-full max-w-md mx-auto flex items-center justify-center">
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -410,7 +384,6 @@ const Landing = () => {
             </div>
           </motion.div>
 
-          {/* Content Below Screen */}
           <div className="mt-6 sm:mt-10 px-4">
             <motion.div
               className="text-center"
@@ -431,7 +404,6 @@ const Landing = () => {
               </p>
             </motion.div>
 
-            {/* Navigation Dots */}
             <motion.div
               className="flex justify-center gap-2 sm:gap-3 mb-5"
               initial={{ opacity: 0 }}
@@ -448,9 +420,7 @@ const Landing = () => {
                 />
               ))}
             </motion.div>
-              {/* Action Buttons */}
             <div className="flex justify-center items-center gap-4 sm:gap-6">
-              {/* Back button (only shown after first slide) */}
               {currentSlide > 0 && (
                 <motion.button
                   className="text-sm sm:text-base text-indigo-800 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-50 touch-target"
@@ -466,7 +436,6 @@ const Landing = () => {
                 </motion.button>
               )}
 
-              {/* Only show Skip button if not on final slide */}
               {!slides[currentSlide].finalSlide && (
                 <motion.button
                   className="text-sm sm:text-base text-gray-500 px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-gray-100 touch-target"
@@ -479,7 +448,6 @@ const Landing = () => {
                 </motion.button>
               )}
               
-              {/* Show either Continue or Sign In button based on slide */}
               <motion.button
                 className="text-sm sm:text-base bg-indigo-900 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-full hover:bg-indigo-800 touch-target min-h-[44px]"
                 whileHover={{ scale: 1.05 }}
@@ -491,8 +459,8 @@ const Landing = () => {
               </motion.button>
             </div>
           </div>
-        </div>      </main>
-      {/* Footer at the bottom */}
+        </div>      
+      </main>
       <footer className="bg-indigo-900 text-white py-6 text-center text-sm w-full mt-auto">
         <p>YouMatter — Taking care of your mental health</p>
         <p className="text-indigo-300">&copy; {new Date().getFullYear()} YouMatter. All rights reserved.</p>

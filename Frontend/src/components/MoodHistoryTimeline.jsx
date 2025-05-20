@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Calendar, Filter, Edit, ChevronDown, ExternalLink, Trash2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Import the same mood colors from Dashboard
 const MOOD_COLORS = {
     awesome: "#FDDD6F", // Yellow
     good: "#46CD87",    // Green
@@ -14,8 +13,6 @@ const MOOD_COLORS = {
 export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, onDeleteLog, isDeleting, deleteLogId }) {
     const [expandedIndex, setExpandedIndex] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState(null);
-      // Log the incoming data
-    console.log("MoodHistoryTimeline received data:", moodHistoryData);
     console.log("MoodHistoryTimeline checking tags and insights:", 
         moodHistoryData.map(mood => ({
             id: mood.id,
@@ -25,7 +22,6 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
         }))
     );
 
-    // Group moods by month
     const groupByMonth = () => {
         const months = Array.from(new Set(moodHistoryData.map(mood => mood.month)));
         return months.map(month => ({
@@ -34,13 +30,12 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
         }));
     };
 
-    const groupedMoods = groupByMonth();    // Handle delete log
+    const groupedMoods = groupByMonth();    
     const handleDelete = (e, logId) => {
         e.stopPropagation();
         setConfirmDelete(logId);
     };
 
-    // Confirm delete
     const confirmDeleteLog = (logId) => {
         if (onDeleteLog) {
             onDeleteLog(logId);
@@ -50,7 +45,6 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
 
     return (
         <div className="bg-white rounded-3xl shadow-md p-6">
-            {/* Delete Confirmation Modal */}
             <AnimatePresence>
                 {confirmDelete && (
                     <motion.div 
@@ -91,7 +85,6 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                 )}
             </AnimatePresence>
 
-            {/* Header */}
             <div className="flex justify-between items-center mb-5">
                 <div>
                     <h3 className="text-xl font-bold text-indigo-800">Mood History</h3>
@@ -106,7 +99,6 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                 </div>
             </div>
 
-            {/* Empty state when no mood data available */}
             {moodHistoryData.length === 0 && (
                 <div className="text-center py-10">
                     <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -119,15 +111,12 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                 </div>
             )}
 
-            {/* Timeline */}
             {moodHistoryData.length > 0 && (
                 <div className="relative px-2 py-6 mt-4">
-                    {/* Timeline line */}
                     <div className="absolute left-16 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 via-blue-100 to-blue-200"></div>
 
                     {groupedMoods.map((group, groupIndex) => (
                         <div key={group.month}>
-                            {/* Month divider (except for first month) */}
                             {groupIndex > 0 && (
                                 <div className="text-center py-6 my-8 relative">
                                     <div className="flex items-center justify-center">
@@ -140,17 +129,14 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                                 </div>
                             )}
 
-                            {/* Moods for this month */}
                             {group.moods.map((mood, index) => (
                                 <div key={`${mood.id || `${mood.month}-${mood.day}-${index}`}`} className="flex items-start mb-16 relative">
-                                    {/* Date indicator with blurry circle backdrop */}
                                     <div className="flex flex-col items-center w-14 mr-4 relative z-10">
                                         <div className="absolute w-16 h-16 rounded-full bg-white shadow-sm filter blur-[6px] opacity-90"></div>
                                         <div className="text-4xl font-bold leading-none relative" style={{ color: mood.textColor || mood.color }}>{mood.day}</div>
                                         <div className="text-sm font-medium mt-0.5 relative" style={{ color: `${mood.textColor || mood.color}99` }}>{mood.weekday}</div>
                                     </div>
 
-                                    {/* Mood emoji circle */}
                                     <div className="relative mr-4 z-10">
                                         <div
                                             className="w-16 h-16 rounded-full flex items-center justify-center shadow-sm overflow-hidden"
@@ -167,7 +153,6 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                                         </div>
                                     </div>
 
-                                    {/* Mood card */}
                                     <motion.div
                                         className="flex-1 rounded-3xl p-5 relative ml-1 shadow-sm"
                                         style={{ backgroundColor: `${mood.color}30` }}
@@ -204,7 +189,6 @@ export default function MoodHistoryTimeline({ moodHistoryData, onCalendarOpen, o
                                             </div>
                                         </div>
 
-                                        {/* Expanded view */}
                                         {expandedIndex === index && (
                                             <motion.div
                                                 initial={{ opacity: 0, height: 0 }}

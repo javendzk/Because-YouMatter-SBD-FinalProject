@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext';
 import logService from '../services/logService';
 import userService from '../services/userService';
 
-// Mood color constants based on design (matching Dashboard)
 const MOOD_COLORS = {
     awesome: "#FDDD6F", // Yellow
     good: "#46CD87",    // Green
@@ -32,53 +31,28 @@ const Welcoming = () => {
     const [isNewUser, setIsNewUser] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Get mood from state or default to 'good' if not provided
     const mood = location.state?.mood || 'good';
     const moodDescription = location.state?.description || '';
     const moodColor = MOOD_COLORS[mood] || MOOD_COLORS.good;
-    const moodMessage = MOOD_MESSAGES[mood] || MOOD_MESSAGES.good;    // Load user data and check redirection logic
+    const moodMessage = MOOD_MESSAGES[mood] || MOOD_MESSAGES.good;  
     useEffect(() => {
         const checkUserStatus = async () => {
             if (!isAuthenticated) {
-                // Not logged in, redirect to sign in
-                console.log('Welcoming: User not authenticated, redirecting to signin');
                 navigate('/signin');
                 return;
             }
 
             try {
-                // Debug: Get and log user profile data
-                console.log('Welcoming: Getting user profile for debugging');
                 const userProfile = await userService.getProfile();
-                console.log('Welcoming: User profile data:', userProfile.data);
-                
-                // First check if user has already logged mood today
-                console.log('Welcoming: Checking if user already logged mood today');
                 const hasLoggedToday = await logService.hasLoggedToday();
-                console.log('Welcoming: Has logged today?', hasLoggedToday);
-                
-                // We'll handle redirect in the animation completion useEffect
-                // instead of redirecting directly here
-                
-                // If user hasn't logged today, check if they're a first-time user
                 const isFirstTime = await userService.isFirstTimeUser();
-                console.log('Welcoming: Is first time user?', isFirstTime);
                 
-                // Double-check with log data - if user has logs, they're not new
-                console.log('Welcoming: Double-checking with log history');
                 const logsResponse = await logService.getUserLogs();
                 if (logsResponse.success && logsResponse.data.length > 0) {
-                    console.log('Welcoming: User has logs, considering as existing user');
                     setIsNewUser(false);
                 } else {
-                    console.log('Welcoming: User has no logs or fetching logs failed');
                     setIsNewUser(isFirstTime);
-                }
-                
-                // IMPORTANT: Do NOT submit a new log here - we expect the log
-                // to already be submitted from the Fill page
-                console.log('Welcoming: Log submission handled by Fill page, skipping submission here');
-                
+                }                
             } catch (error) {
                 console.error('Error checking user status:', error);
             } finally {
@@ -87,44 +61,29 @@ const Welcoming = () => {
         };
 
         checkUserStatus();
-    }, [navigate, isAuthenticated, mood, moodDescription, location.state]);// Simulate loading process
+    }, [navigate, isAuthenticated, mood, moodDescription, location.state]);
     useEffect(() => {
         if (isLoading) return;
         
-        console.log('Welcoming: Animation finished, preparing to navigate');
-        console.log('Welcoming: Is new user?', isNewUser);
-        
         const timer = setTimeout(async () => {
-            // If new user, navigate to tutorial
             if (isNewUser) {
-                console.log('Welcoming: Redirecting to tutorial (new user)');
                 navigate('/tutorial', { state: { mood } });
             } else {
-                // For existing users, check if they've logged today
                 try {
-                    console.log('Welcoming: Checking if existing user has logged today');
                     const hasLoggedToday = await logService.hasLoggedToday();
-                    console.log('Welcoming: Existing user has logged today?', hasLoggedToday);
                     
                     if (hasLoggedToday) {
-                        // If already logged today, go to dashboard
-                        console.log('Welcoming: Existing user has logged today, redirecting to dashboard');
                         navigate('/dashboard', { state: { mood } });
                     } else {
-                        // If not logged today, go to fill mood page
-                        console.log('Welcoming: Existing user has NOT logged today, redirecting to fill mood page');
                         navigate('/fill');
                     }
                 } catch (error) {
                     console.error('Error checking if user has logged today:', error);
-                    // Default to fill page if there's an error
-                    console.log('Welcoming: Error checking logs, redirecting to fill as fallback');
                     navigate('/fill');
                 }
             }
         }, 4000);
 
-        // Update progress animation
         const interval = setInterval(() => {
             setLoadingProgress((prev) => {
                 if (prev >= 100) {
@@ -141,7 +100,6 @@ const Welcoming = () => {
         };
     }, [navigate, mood, isNewUser, isLoading]);
 
-    // Dynamic styles based on mood
     const gradientStyle = {
         background: `linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6)), 
                  linear-gradient(to bottom, #f7fafc, ${moodColor}55)`
@@ -177,7 +135,6 @@ const Welcoming = () => {
                     {user ? `Welcome, ${user.username}` : 'Welcome to YouMatter'}
                 </h1>
 
-                {/* Add corresponding mood image right after welcome text */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -189,7 +146,6 @@ const Welcoming = () => {
                         alt={`${mood} mood`}
                         className="w-24 h-24 mx-auto"
                         onError={(e) => {
-                            // Fallback if image doesn't exist
                             e.target.style.display = 'none';
                         }}
                     />
@@ -209,7 +165,6 @@ const Welcoming = () => {
                     </p>
                 </motion.div>
 
-                {/* Loading bar */}
                 <div className="w-full max-w-md h-3 bg-gray-200 rounded-full overflow-hidden mx-auto">
                     <motion.div
                         style={progressBarStyle}
@@ -224,7 +179,6 @@ const Welcoming = () => {
                     {isNewUser ? 'Preparing your tutorial...' : 'Preparing your dashboard...'} {loadingProgress}%
                 </p>
 
-                {/* Mood-specific animation and main logo container */}
                 <div className="mt-8 mb-6">
                     <div className="relative w-56 h-56 mx-auto p-5 rounded-full bg-white shadow-lg flex items-center justify-center pulse-glow">
                         <motion.div
@@ -237,7 +191,6 @@ const Welcoming = () => {
                             }}
                             className="absolute inset-0"
                         />
-                        {/* Main logo - centered */}
                         <img
                             src="/src/assets/logo.png"
                             alt="YouMatter Logo"

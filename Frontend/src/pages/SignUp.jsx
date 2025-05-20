@@ -1,4 +1,3 @@
-// SignUp.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -23,7 +22,6 @@ const SignUp = () => {
     const [ageError, setAgeError] = useState('');
     const [generalError, setGeneralError] = useState('');
 
-    // Calculate age from birthday
     const calculateAge = (birthDate) => {
         if (!birthDate) return '';
         
@@ -33,7 +31,6 @@ const SignUp = () => {
         let age = today.getFullYear() - dob.getFullYear();
         const monthDiff = today.getMonth() - dob.getMonth();
         
-        // Adjust age if birthday hasn't occurred yet this year
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
             age--;
         }
@@ -41,13 +38,11 @@ const SignUp = () => {
         return age.toString();
     };    
     
-    // Handle birthday change and update age automatically
     const handleBirthdayChange = (e) => {
         const birthDate = e.target.value;
         setBirthday(birthDate);
         const calculatedAge = calculateAge(birthDate);
         
-        // Validate age when birthday is changed
         const userAge = parseInt(calculatedAge);
         if (isNaN(userAge) || userAge < 13) {
             setAgeError('You must be at least 13 years old to register');
@@ -56,7 +51,6 @@ const SignUp = () => {
         }
     };
     
-    // Validate password
     const validatePassword = () => {
         if (password !== confirmPassword) {
             setPasswordError('Passwords do not match');
@@ -70,21 +64,17 @@ const SignUp = () => {
         return true;
     };
     
-    // Handle sign up submission
     const handleSignUp = async (e) => {
         e.preventDefault();
         
-        // Reset errors
         setPasswordError('');
         setAgeError('');
         setGeneralError('');
         
-        // Validate form
         if (!validatePassword()) {
             return;
         }
         
-        // Validate age
         const userAge = parseInt(calculateAge(birthday));
         if (isNaN(userAge) || userAge < 13) {
             setAgeError('You must be at least 13 years old to register');
@@ -92,7 +82,7 @@ const SignUp = () => {
         }
         
         setIsLoading(true);
-          try {            // Prepare user data for registration
+          try {           
             const userData = {
                 username,
                 password,
@@ -104,27 +94,17 @@ const SignUp = () => {
                 telegram_id: telegramId ? (isNaN(Number(telegramId)) ? undefined : Number(telegramId)) : undefined
             };
             
-            console.log('Signup: Sending user data for registration:', {
-                ...userData,
-                password: '******' // Mask password for security
-            });
-              // Call the register function from our auth context
             const result = await register(userData);
             
             if (result.success) {
                 if (result.autoLoginSuccess) {
-                    // Auto-login was successful, redirect to tutorial page
-                    console.log('SignUp: Registration and auto-login successful, redirecting to tutorial');
                     navigate('/tutorial');
                 } else {
-                    // Auto-login failed, redirect to sign in with message
-                    console.log('SignUp: Registration successful but auto-login failed, redirecting to signin');
                     navigate('/signin', { 
                         state: { message: 'Account created successfully. Please log in.' } 
                     });
                 }
             } else {
-                // Display error message
                 setGeneralError(result.message || 'Registration failed. Please try again.');
             }
         } catch (err) {
@@ -135,12 +115,10 @@ const SignUp = () => {
         }
     };
 
-    // User data for navbar
     const userData = {
         loggedIn: false
     };
 
-    // Page transition
     const pageVariants = {
         initial: {
             opacity: 0,
@@ -170,7 +148,6 @@ const SignUp = () => {
             exit="exit"
             variants={pageVariants}
         >
-            {/* Using the common Navbar component */}
             <Navbar userData={userData} />
 
             <div className="max-w-md mx-4 sm:mx-auto mt-16 sm:mt-20 p-4 sm:p-6 bg-white rounded-lg shadow-lg mb-10">

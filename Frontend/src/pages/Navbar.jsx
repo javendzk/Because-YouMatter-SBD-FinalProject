@@ -1,4 +1,3 @@
-// Navbar.jsx
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -38,7 +37,6 @@ export default function Navbar({ userData }) {
                 <h1 className="text-xl sm:text-2xl font-bold text-[#4F5D87]">YouMatter</h1>
             </motion.div>
 
-            {/* Mobile menu button */}
             <div className="md:hidden">                <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 text-[#4F5D87] min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -46,7 +44,6 @@ export default function Navbar({ userData }) {
                 {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             </div>
-            {/* Desktop menu */}
             <motion.nav
                 className="hidden md:flex items-center gap-6"
                 initial={{ x: 20, opacity: 0 }}
@@ -94,7 +91,6 @@ export default function Navbar({ userData }) {
                 )}
             </motion.nav>
 
-            {/* Mobile menu dropdown */}
             <AnimatePresence>
                 {isMenuOpen && (
                     <motion.div

@@ -6,25 +6,19 @@ import Navbar from './Navbar';
 import { useAuth } from '../context/AuthContext';
 
 const SignIn = () => {
-    console.log('=== SIGNIN COMPONENT RENDERED ===');
     
     const navigate = useNavigate();
-    const { login } = useAuth();
-    console.log('Login function from context:', login ? 'Available' : 'Not available');
-    
+    const { login } = useAuth();    
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     
     useEffect(() => {
-        console.log('SignIn component mounted');
         return () => {
-            console.log('SignIn component unmounted');
         };
     }, []);
 
-    // Page transition
     const pageVariants = {
         initial: {
             opacity: 0,
@@ -45,30 +39,17 @@ const SignIn = () => {
             }
         }
     };
-      const handleSignIn = async (e) => {
-        // Add debug logging
-        console.log('=== SIGN IN HANDLER ===');
-        console.log('Event:', e);
-        console.log('Form event type:', e.type);
-        console.log('Form was submitted with email:', email);
-        
+      const handleSignIn = async (e) => {        
         e.preventDefault();
         setIsLoading(true);
         setError('');
         
         try {
-            console.log('Attempting login with credentials:', { email, password: '******' });
-            // Call the login function from our auth context
             const result = await login({ email, password });
-            console.log('Login result received:', result);
             
             if (result.success) {
-                console.log('Login successful, navigating to welcoming page');
-                // Login successful, navigate to welcome page as per flow requirements
                 navigate('/welcoming');
             } else {
-                console.log('Login failed with message:', result.message);
-                // Display error message
                 setError(result.message || 'Failed to sign in. Please try again.');
             }
         } catch (err) {
@@ -86,7 +67,6 @@ const SignIn = () => {
             exit="exit"
             variants={pageVariants}
         >
-            {/* Using the common Navbar component */}
             <Navbar userData={{ loggedIn: false }} />
 
             <div className="max-w-md mt-20 p-4 sm:p-6 bg-white rounded-lg shadow-lg mx-auto sm:mx-auto">
@@ -104,8 +84,6 @@ const SignIn = () => {
                     <h2 className="text-xl sm:text-2xl font-bold text-indigo-900">Welcome Back!</h2>
                     <p className="text-gray-600 text-sm sm:text-base">Sign in to continue your mental wellness journey</p>
                 </motion.div>                <form onSubmit={(e) => {
-                    console.log('=== FORM SUBMIT EVENT ===');
-                    console.log('Submit event triggered');
                     handleSignIn(e);
                 }}>
                     <motion.div
@@ -121,13 +99,12 @@ const SignIn = () => {
                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mobile-input touch-target"
                             value={email}
                             onChange={(e) => {
-                                console.log('Email input changed:', e.target.value);
                                 setEmail(e.target.value);
                             }}
                             required
                             placeholder="Enter your email"
                             autoComplete="email"
-                            onFocus={() => console.log('Email field focused')}
+                            onFocus={() => console.log('')}
                         />
                     </motion.div>                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -143,13 +120,12 @@ const SignIn = () => {
                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mobile-input touch-target"
                             value={password}
                             onChange={(e) => {
-                                console.log('Password field changed (length):', e.target.value.length);
                                 setPassword(e.target.value);
                             }}
                             required
                             placeholder="Enter your password"
                             autoComplete="current-password"
-                            onFocus={() => console.log('Password field focused')}
+                            onFocus={() => console.log('')}
                         />
                     </motion.div>
 
@@ -171,9 +147,7 @@ const SignIn = () => {
                         className="w-full py-3 sm:py-4 bg-indigo-900 text-white rounded-full font-medium transition duration-300 flex justify-center min-h-[48px]"
                         disabled={isLoading}
                         onClick={(e) => {
-                            console.log('=== BUTTON CLICK EVENT ===');
-                            // Don't call handleSignIn here, just log the click
-                            // Form submit will handle the actual submission
+
                         }}
                     >
                         {isLoading ? (

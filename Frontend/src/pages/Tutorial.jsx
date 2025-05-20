@@ -82,7 +82,6 @@ const Tutorial = () => {
     }
   ];
   
-  // Handle mood selection
   const handleMoodChange = (mood) => {
     if (mood !== selectedMood) {
       setAnimating(true);
@@ -93,7 +92,6 @@ const Tutorial = () => {
         }, 300);
       }, 150);
       
-      // If on step 1, advance to step 2 automatically
       if (currentStep === 1) {
         setTimeout(() => {
           nextStep();
@@ -102,7 +100,6 @@ const Tutorial = () => {
     }
   };
   
-  // Auto-advance for certain steps
   useEffect(() => {
     if (currentStep === 2) {
       const timer = setTimeout(() => {
@@ -112,7 +109,6 @@ const Tutorial = () => {
     }
   }, [currentStep]);
   
-  // Focus on textarea when reaching step 3
   useEffect(() => {
     if (currentStep === 3 && textareaRef.current) {
       setTimeout(() => {
@@ -120,30 +116,24 @@ const Tutorial = () => {
       }, 500);
     }
     
-    // Show pulsing highlight effect on the current element
     if (tutorialSteps[currentStep]?.highlightElement) {
       setShowHighlight(true);
     } else {
       setShowHighlight(false);
     }
   }, [currentStep]);
-    // Handle next step button
   const nextStep = () => {
     if (currentStep < tutorialSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Tutorial complete
       setTutorialComplete(true);
       setFadeOut(true);
       setTimeout(() => {
-        // Navigate to Fill page
         navigateToWelcoming();
       }, 1500);
     }
-  };// Function to navigate after tutorial
+  };
   const navigateToWelcoming = () => {
-    // Always redirect to Fill page from tutorial for new users to log their first mood
-    console.log('Tutorial: Redirecting to Fill page after tutorial completion');
     navigate('/fill', { 
       state: { 
         mood: selectedMood,
@@ -153,11 +143,9 @@ const Tutorial = () => {
     });
   };
   
-  // Handle text input - auto-advance when typing enough text
   const handleTextInput = (e) => {
     setMoodDescription(e.target.value);
     
-    // If on step 3 and typed at least 10 characters, advance to step 4
     if (currentStep === 3 && e.target.value.length >= 10 && !tutorialComplete) {
       setTimeout(() => {
         nextStep();
@@ -165,7 +153,6 @@ const Tutorial = () => {
     }
   };
   
-  // Handle Select Mood button click - navigate directly to welcoming
   const handleSelectMood = () => {
     setFadeOut(true);
     setTimeout(() => {
@@ -173,7 +160,6 @@ const Tutorial = () => {
     }, 500);
   };
   
-  // Animation helper for highlighted elements
   const getHighlightStyle = (elementSelector) => {
     if (showHighlight && tutorialSteps[currentStep]?.highlightElement === elementSelector) {
       return {
@@ -188,15 +174,11 @@ const Tutorial = () => {
 
   return (
     <div className={`flex h-screen flex-col bg-white transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Use the imported Navbar component */}
       <Navbar userData={userData} />
       
-      {/* Tutorial overlay */}
       <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-20 pointer-events-none" />
       
-      {/* Main content - similar layout to Fill.jsx */}
       <div className="w-full max-w-lg px-4 mx-auto flex flex-col items-center z-30 mt-20">
-        {/* Tutorial guidance box */}
         <div className="bg-white rounded-lg p-4 mb-6 w-full shadow-lg border-l-4 border-indigo-500 transform transition-all duration-500">
           <h2 className="text-indigo-600 text-xl font-bold mb-2">
             {tutorialSteps[currentStep].title}
@@ -214,7 +196,6 @@ const Tutorial = () => {
           )}
         </div>
         
-        {/* Mood selection area - similar to Fill.jsx */}
         <div className="bg-blue-50 rounded-lg p-8 mb-6 w-full flex flex-col items-center">
           <h2 className="text-gray-700 text-2xl mb-2 font-medium text-center">
             How are you feeling today?
@@ -224,7 +205,6 @@ const Tutorial = () => {
             {selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)}
           </p>
           
-          {/* Mood emoji display with animation */}
           <div 
             className={`mood-emoji mb-8 transform transition-all duration-500 ease-in-out ${animating ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
             style={{ 
@@ -246,7 +226,6 @@ const Tutorial = () => {
             />
           </div>
           
-          {/* Mood selector dots */}
           <div 
             className="mood-dots flex justify-center gap-4 mb-2"
             style={getHighlightStyle('.mood-dots')}
@@ -270,7 +249,6 @@ const Tutorial = () => {
           </div>
         </div>
         
-        {/* Input area */}
         <div 
           className="w-full mb-6"
           style={getHighlightStyle('.mood-textarea')}
@@ -287,7 +265,7 @@ const Tutorial = () => {
           />
         </div>
         
-        {/* Submit button - now always navigates to welcoming page */}        <div 
+        <div 
           className="w-full"
           style={getHighlightStyle('.mood-button')}
         >
@@ -302,7 +280,6 @@ const Tutorial = () => {
         </div>
       </div>
       
-      {/* CSS Animation Keyframes */}
       <style jsx>{`
         @keyframes pulse {
           0% {

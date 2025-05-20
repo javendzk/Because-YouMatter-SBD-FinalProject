@@ -1,7 +1,3 @@
-// Let the backend handle creation vs update logic
-// Fix timezone issues for comparing dates
-// Add protection against multiple submissions
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -9,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import logService from '../services/logService';
 import telegramService from '../services/telegramService';
 
-// Mood colors matching design system
 const MOOD_COLORS = {
   awesome: "#FDDD6F", // Yellow
   good: "#46CD87",    // Green
@@ -27,53 +22,37 @@ const Fill = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isUpdateMode, setIsUpdateMode] = useState(false);
-  const [todayLog, setTodayLog] = useState(null);  // Check if user is logged in and handle different entry points
+  const [todayLog, setTodayLog] = useState(null);  
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log('Fill: User not authenticated, redirecting to signin');
       navigate('/signin');
       return;
     }
     
-    console.log('Fill: Location state:', location.state);
     
-    // Check if we're coming from tutorial with pre-filled mood
     if (location.state && location.state.fromTutorial) {
-      console.log('Fill: Coming from tutorial, setting up form');
       
-      // Pre-fill the form with the mood from tutorial if available
       if (location.state.mood) {
-        console.log('Fill: Pre-filling with mood from tutorial', location.state.mood);
         setSelectedMood(location.state.mood);
       }
       
       if (location.state.description) {
-        console.log('Fill: Pre-filling with description from tutorial', location.state.description);
         setMoodDescription(location.state.description);
       }
       
-      // We don't need to check hasLoggedToday when coming directly from tutorial
-      console.log('Fill: Coming from tutorial, skipping hasLoggedToday check');
     }
-    // Check if we're in update mode from Dashboard
     else if (location.state && location.state.isUpdateMode) {
-      console.log('Fill: In update mode');
       setIsUpdateMode(true);
       
-      // Fetch today's log to pre-fill the form
       const fetchTodayLog = async () => {
         try {
-          console.log('Fill: Fetching today\'s log directly');
           const todayLog = await logService.getTodayLog();
           
           if (todayLog) {
-            console.log('Fill: Found today\'s log', todayLog);
             setTodayLog(todayLog);
             setSelectedMood(todayLog.mood || 'awesome');
             setMoodDescription(todayLog.day_description || '');
-          } else {
-            console.log('Fill: No log found for today, but staying in update mode');
-          }
+          } 
         } catch (err) {
           console.error('Error fetching today\'s log:', err);
         }
@@ -81,18 +60,14 @@ const Fill = () => {
       
       fetchTodayLog();
     } 
-    // Regular entry mode - check if user has already logged mood today
+
     else {
       const checkTodayLog = async () => {
         try {
-          console.log('Fill: Checking if user has already logged mood today');
           const hasLoggedToday = await logService.hasLoggedToday();
           if (hasLoggedToday) {
-            console.log('Fill: User has already logged mood today, redirecting to dashboard');
             navigate('/dashboard');
-          } else {
-            console.log('Fill: User has not logged mood today, staying on Fill page');
-          }
+          } 
         } catch (err) {
           console.error('Error checking today\'s log:', err);
         }
@@ -102,7 +77,6 @@ const Fill = () => {
     }
   }, [isAuthenticated, navigate, location.state]);
 
-  // User data for Navbar
   const userData = {
     loggedIn: isAuthenticated,
     username: user?.username || '',
@@ -124,23 +98,18 @@ const Fill = () => {
   };
   const handleSubmitMood = async () => {
     if (!isAuthenticated) {
-      console.log('Fill: User not authenticated, redirecting to signin');
       navigate('/signin');
       return;
     }
     
-    // Strong protection against multiple submissions
     if (isLoading) {
-      console.log('Fill: Submission already in progress, ignoring duplicate request');
       return;
     }
     
-    // Set a submission lock
     setIsLoading(true);
     setError('');
     
     try {
-      // Prepare log data
       const logData = {
         mood: selectedMood,
         day_description: moodDescription || ""
@@ -149,69 +118,46 @@ const Fill = () => {
       let response;
       let todayLogObj = todayLog;
       
-      // If we don't have the log ID but we're in update mode, try to fetch it
       if (!todayLogObj && isUpdateMode) {
-        console.log('Fill: Getting today\'s log for update');
         todayLogObj = await logService.getTodayLog();
       }
       
-      // Check if we should update or create
       if (isUpdateMode && todayLogObj && todayLogObj.log_id) {
-        // UPDATE: Use PUT request with the log ID
-        console.log(`Fill: Updating existing log with ID ${todayLogObj.log_id}`);
         response = await logService.updateDailyLog(todayLogObj.log_id, logData);
-        console.log('Fill: Update response:', response);
       } else {
-        // If not in update mode or no existing log found, check if the user has already logged today
         if (!isUpdateMode) {
           const hasLoggedToday = await logService.hasLoggedToday();
           if (hasLoggedToday) {
-            // If user has already logged today but we're not in update mode,
-            // get the log and update it instead of creating a new one
-            console.log('Fill: Detected existing log for today, switching to update mode');
             const existingLog = await logService.getTodayLog();
             
             if (existingLog && existingLog.log_id) {
-              console.log(`Fill: Updating existing log with ID ${existingLog.log_id}`);
               response = await logService.updateDailyLog(existingLog.log_id, logData);
             } else {
-              console.log('Fill: Could not find existing log, creating new one');
               response = await logService.createDailyLog(logData);
             }
           } else {
-            // CREATE: Use POST request for new log
-            console.log('Fill: Creating new daily log');
             response = await logService.createDailyLog(logData);
           }
         } else {
-          // CREATE: Use POST request for new log if we're somehow in update mode without a log ID
-          console.log('Fill: Creating new daily log (fallback)');
           response = await logService.createDailyLog(logData);
         }
       }
       
       if (response && response.success) {
-        // Send notification to Telegram with the latest mood entry
         try {
-          console.log('Fill: Sending latest log to Telegram');
           await telegramService.sendLatestToTelegram();
         } catch (telegramErr) {
-          // Don't stop the flow if Telegram notification fails
           console.error('Error sending Telegram notification:', telegramErr);
         }
         
         if (isUpdateMode) {
-          // If updating, go back to dashboard
-          console.log('Fill: Daily log updated successfully, navigating back to dashboard');
           navigate('/dashboard');
         } else {
-          // If new entry, go to welcoming page
-          console.log('Fill: Daily log submitted successfully, navigating to welcoming page');
           navigate('/welcoming', { 
             state: { 
               mood: selectedMood,
               description: moodDescription,
-              alreadySubmitted: true // Flag to prevent duplicate submission
+              alreadySubmitted: true 
             } 
           });
         }
@@ -229,7 +175,6 @@ const Fill = () => {
 
   return (
     <div className="flex h-screen flex-col bg-white">
-      {/* Use the imported Navbar component */}
       <Navbar userData={userData} />
 
       <div className="w-full max-w-lg px-4 mx-auto flex flex-col items-center mt-20">
